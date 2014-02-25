@@ -52,9 +52,20 @@ module.exports = function(grunt) {
       }
     },
 
+
+    coffee: {
+      compile: {
+        files: {
+          'tasks/lib/util.js': 'tasks/lib/util.coffee', // 1:1 compile
+        }
+      },
+    },
+
+
     nodeunit: {
       tasks: ['test/*_test.js']
     },
+
   });
 
   grunt.loadTasks('tasks');
@@ -62,6 +73,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
+  grunt.loadNpmTasks('grunt-contrib-coffee');
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result.
