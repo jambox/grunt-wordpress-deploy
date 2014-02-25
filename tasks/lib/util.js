@@ -25,38 +25,33 @@ exports.init = function (grunt) {
   exports.db_dump_ess = function(config, output_paths) {
     grunt.file.mkdir(output_paths.dir);
 
-    var table_matches = exports.db_prefix_matches(config);
+    var prefix_matches = exports.all_table_prefix_matches(config);
 
-    table_matches.forEach( function( match ) {
-          grunt.log.oklns("match");
-          console.log(line);
-    });
-    grunt.log.oklns("table matches");
-    console.log(table_matches);
-    
-    // var cmd = exports.mysqldump_cmd(config);
+    grunt.log.oklns("prefix matches");
+    console.log(prefix_matches);
 
-    // grunt.log.oklns("dump command: " + cmd);
+    var tables_to_dump = exports.tables_to_dump(config, prefix_matches);
+    grunt.log.oklns("tables to dump");
+    console.log( tables_to_dump );
 
-    // var output = shell.exec(cmd, {silent: true}).output;
+    var prefixed_sqldump = exports.prefixed_sqldump(config, tables_to_dump);
 
-    // grunt.file.write(output_paths.file, output);
-    // grunt.log.oklns("Database DUMP succesfully exported to: " + output_paths.file);
+    grunt.file.write(output_paths.file, prefixed_sqldump);
+    grunt.log.oklns("Database DUMP for '" + config.table_prefix + "' succesfully exported to: " + output_paths.file);
   };
 
-  exports.db_prefix_matches = function( config ){
+  exports.all_table_prefix_matches = function( config ){
     var table_prefix = config.table_prefix || 'wp_';
 
-    var prefix_tpls = {
-      sql_connect : "mysql <%= database %> -u <%= user %> --password=<%= pass %>",
+    var prefix_match_tpls = {
       sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" AND TABLE_NAME LIKE "<%= table_prefix %>%posts";',
-      prefix_matches_cmd : "<%= sql_connect %> '<%= tables_sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g'"
+      prefix_matches_cmd : "<%= sql_connect %> '<%= tables_sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g' | xargs "
     }
 
-    var works_in_shell = "mysql wordpress -u admin --password=admin -e 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"wordpress\" AND TABLE_NAME LIKE \"wp_%posts\";' | grep -v -e TABLE_NAME | sed -e 's/posts//g'";
+    // var works_in_shell = "mysql wordpress -u admin --password=admin -e 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"wordpress\" AND TABLE_NAME LIKE \"wp_%posts\";' | grep -v -e TABLE_NAME | sed -e 's/posts//g'";
     // console.log( shell.exec( works_in_shell ).output ); return false;
 
-    var sql_connect = grunt.template.process(prefix_tpls.sql_connect, {
+    var sql_connect = grunt.template.process(tpls.sql_connect, {
       data: {
         user: config.user,
         pass: config.pass,
@@ -64,7 +59,7 @@ exports.init = function (grunt) {
       }
     });
 
-    var tables_sql = grunt.template.process(prefix_tpls.sql, {
+    var tables_sql = grunt.template.process(prefix_match_tpls.sql, {
       data: {
         database: config.database,
         table_prefix: table_prefix
@@ -73,18 +68,90 @@ exports.init = function (grunt) {
     // grunt.log.writeln('tables sql');
     // console.log(tables_sql);
     
-    var prefix_matches_cmd = grunt.template.process(prefix_tpls.prefix_matches_cmd, {
+    var prefix_matches_cmd = grunt.template.process(prefix_match_tpls.prefix_matches_cmd, {
       data: {
         sql_connect: sql_connect,
         tables_sql: tables_sql
       }
     });
 
-    console.log('cmd \n' + prefix_matches_cmd);
-    var prefix_matches = shell.exec( prefix_matches_cmd ).output;
+    // console.log('cmd \n' + prefix_matches_cmd);
+    var prefix_matches = shell.exec( prefix_matches_cmd, { silent: true } ).output.replace(/(\r\n|\n|\r)/gm,'');
+    // console.log('matches [' + prefix_matches +']');
 
-    return prefix_matches;
+    return prefix_matches.split(' ');
 
+  };
+
+  exports.tables_to_dump = function(config, prefix_matches) {
+
+    var prefix_tpls = {
+      sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" <%= comparison %>;',
+      like : ' AND TABLE_NAME LIKE "<%= match %>%"',
+      not_like : ' AND TABLE_NAME NOT LIKE "<%= match %>%"',
+      cmd : "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g' | xargs ",
+    };
+
+    var sql_connect = grunt.template.process(tpls.sql_connect, {
+      data: {
+        user: config.user,
+        pass: config.pass,
+        database: config.database
+      }
+    });
+
+    var comparison = '';
+    for ( var i = 0; i < prefix_matches.length; i++ ) {
+      var match = prefix_matches[i];
+
+      if( !match ) {
+        continue;
+      }
+
+      if ( match == config.table_prefix ) {
+        comparison += grunt.template.process(prefix_tpls.like, { data: { match:match } } );        
+        // comparison += " AND TABLE_NAME LIKE '" + match + "%'";
+      } else {
+        comparison += grunt.template.process(prefix_tpls.not_like, { data: { match:match } } );        
+        // comparison += " AND TABLE_NAME NOT LIKE '" + match + "%'";
+      }
+    }
+
+    var sql = grunt.template.process(prefix_tpls.sql, {
+      data: {
+        database: config.database,
+        comparison: comparison
+      }
+    });
+
+    var cmd = grunt.template.process(prefix_tpls.cmd, {
+      data: {
+        sql_connect: sql_connect,
+        sql: sql
+      }
+    });
+
+    // Make sure you strip the new line chars
+    console.log('cmd');
+    console.log(cmd);
+    var tables_to_dump = shell.exec( cmd, { silent: true } ).output.replace(/(\r\n|\n|\r)/gm,'');
+
+    return tables_to_dump.split(' ');
+
+  };
+
+  exports.prefixed_sqldump = function(config, tables_to_dump){
+    if(!tables_to_dump) {
+      return false;
+    }
+
+    var cmd = exports.mysqldump_cmd(config);
+
+    cmd += ' ' + tables_to_dump.join(' ');
+
+    var dump_output = shell.exec( cmd, { silent: true } ).output;
+
+    return dump_output;
   };
 
 
@@ -294,6 +361,7 @@ exports.init = function (grunt) {
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",
     mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>",
     mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>",
+    sql_connect : "mysql <%= database %> -u <%= user %> --password=<%= pass %>",
     rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>",
     rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>",
     ssh: "ssh <%= host %>",
