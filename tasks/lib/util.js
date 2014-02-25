@@ -11,11 +11,85 @@ exports.init = function (grunt) {
 
     var cmd = exports.mysqldump_cmd(config);
 
+    grunt.log.oklns("dump command: " + cmd);
+
     var output = shell.exec(cmd, {silent: true}).output;
 
     grunt.file.write(output_paths.file, output);
     grunt.log.oklns("Database DUMP succesfully exported to: " + output_paths.file);
   };
+
+  /*==========  Caliper mods  ==========*/
+  
+
+  exports.db_dump_ess = function(config, output_paths) {
+    grunt.file.mkdir(output_paths.dir);
+
+    var table_matches = exports.db_prefix_matches(config);
+
+    table_matches.forEach( function( match ) {
+          grunt.log.oklns("match");
+          console.log(line);
+    });
+    grunt.log.oklns("table matches");
+    console.log(table_matches);
+    
+    // var cmd = exports.mysqldump_cmd(config);
+
+    // grunt.log.oklns("dump command: " + cmd);
+
+    // var output = shell.exec(cmd, {silent: true}).output;
+
+    // grunt.file.write(output_paths.file, output);
+    // grunt.log.oklns("Database DUMP succesfully exported to: " + output_paths.file);
+  };
+
+  exports.db_prefix_matches = function( config ){
+    var table_prefix = config.table_prefix || 'wp_';
+
+    var prefix_tpls = {
+      sql_connect : "mysql <%= database %> -u <%= user %> --password=<%= pass %>",
+      sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" AND TABLE_NAME LIKE "<%= table_prefix %>%posts";',
+      prefix_matches_cmd : "<%= sql_connect %> '<%= tables_sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g'"
+    }
+
+    var works_in_shell = "mysql wordpress -u admin --password=admin -e 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"wordpress\" AND TABLE_NAME LIKE \"wp_%posts\";' | grep -v -e TABLE_NAME | sed -e 's/posts//g'";
+    // console.log( shell.exec( works_in_shell ).output ); return false;
+
+    var sql_connect = grunt.template.process(prefix_tpls.sql_connect, {
+      data: {
+        user: config.user,
+        pass: config.pass,
+        database: config.database
+      }
+    });
+
+    var tables_sql = grunt.template.process(prefix_tpls.sql, {
+      data: {
+        database: config.database,
+        table_prefix: table_prefix
+      }
+    });
+    // grunt.log.writeln('tables sql');
+    // console.log(tables_sql);
+    
+    var prefix_matches_cmd = grunt.template.process(prefix_tpls.prefix_matches_cmd, {
+      data: {
+        sql_connect: sql_connect,
+        tables_sql: tables_sql
+      }
+    });
+
+    console.log('cmd \n' + prefix_matches_cmd);
+    var prefix_matches = shell.exec( prefix_matches_cmd ).output;
+
+    return prefix_matches;
+
+  };
+
+
+  /*==========  Caliper mods  ==========*/
+
 
   exports.db_import = function(config, src) {
     shell.exec(exports.mysql_cmd(config, src));
@@ -146,7 +220,7 @@ exports.init = function (grunt) {
     });
 
     if (typeof config.ssh_host === "undefined") {
-      grunt.log.oklns("Creating DUMP of local database");
+      grunt.log.oklns("Creating DUMP of local database [" + config.database + "]");
     } else {
       grunt.log.oklns("Creating DUMP of remote database");
       var tpl_ssh = grunt.template.process(tpls.ssh, {
@@ -156,7 +230,6 @@ exports.init = function (grunt) {
       });
       cmd = tpl_ssh + " '" + cmd + "'";
     }
-
     return cmd;
   };
 
@@ -174,6 +247,7 @@ exports.init = function (grunt) {
     if (typeof config.ssh_host === "undefined") {
       grunt.log.oklns("Importing DUMP into local database");
       cmd = cmd + " < " + src;
+      console.log( cmd );
     } else {
       var tpl_ssh = grunt.template.process(tpls.ssh, {
         data: {
@@ -224,6 +298,9 @@ exports.init = function (grunt) {
     rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>",
     ssh: "ssh <%= host %>",
   };
+
+
+
 
   return exports;
 };
