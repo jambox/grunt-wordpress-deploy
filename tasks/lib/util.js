@@ -27,11 +27,11 @@ exports.init = function (grunt) {
 
     var prefix_matches = exports.all_table_prefix_matches(config);
 
-    grunt.log.oklns("prefix matches");
+    grunt.log.oklns("Prefix matches from '" + config.table_prefix + "'");
     console.log(prefix_matches);
 
     var tables_to_dump = exports.tables_to_dump(config, prefix_matches);
-    grunt.log.oklns("tables to dump");
+    grunt.log.oklns("Tables to dump");
     console.log( tables_to_dump );
 
     var prefixed_sqldump = exports.prefixed_sqldump(config, tables_to_dump);
@@ -40,6 +40,8 @@ exports.init = function (grunt) {
     grunt.log.oklns("Database DUMP for '" + config.table_prefix + "' succesfully exported to: " + output_paths.file);
   };
 
+  // Find all table prefix that match the config.table_prefix
+  // (i.e. the prefix 'wp_' could match 'wp_', 'wp_backup_', etc.)  
   exports.all_table_prefix_matches = function( config ){
     var table_prefix = config.table_prefix || 'wp_';
 
@@ -83,6 +85,10 @@ exports.init = function (grunt) {
 
   };
 
+  // Return Array of tables to dump
+  // Builds a SQL statement that SELECTS table_names
+  //        LIKE '<%= config.table_prefix_ =>%'
+  //        and NOT LIKE '<%= other_matched_prefixes %>_'
   exports.tables_to_dump = function(config, prefix_matches) {
 
     var prefix_tpls = {
@@ -138,6 +144,7 @@ exports.init = function (grunt) {
 
   };
 
+  // Run the mysqldump cmd and append the table names from exports.tables_to_dump() fn
   exports.prefixed_sqldump = function(config, tables_to_dump){
     if(!tables_to_dump) {
       return false;
