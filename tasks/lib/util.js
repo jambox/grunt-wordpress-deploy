@@ -89,7 +89,7 @@ exports.init = function (grunt) {
       sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" <%= comparison %>;',
       like : ' AND TABLE_NAME LIKE "<%= match %>%"',
       not_like : ' AND TABLE_NAME NOT LIKE "<%= match %>%"',
-      cmd : "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g' | xargs ",
+      cmd : "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | xargs ",
     };
 
     var sql_connect = grunt.template.process(tpls.sql_connect, {
@@ -132,8 +132,6 @@ exports.init = function (grunt) {
     });
 
     // Make sure you strip the new line chars
-    console.log('cmd');
-    console.log(cmd);
     var tables_to_dump = shell.exec( cmd, { silent: true } ).output.replace(/(\r\n|\n|\r)/gm,'');
 
     return tables_to_dump.split(' ');
