@@ -3,30 +3,43 @@
 exports.init = (grunt) ->
   shell = require("shelljs")
   lineReader = require("line-reader")
+  
   exports = {}
 
   exports.db_dump = (config, output_paths) ->
     grunt.file.mkdir output_paths.dir
-    cmd = exports.mysqldump_cmd(config)
+
+    if config.table_prefix
+      console.log "Using table prefix " + config.table_prefix
+      cmd = exports.prefixed_mysqldump_cmd(config)
+    else
+      console.log "NOT using table prefix " + config.table_prefix
+      cmd = exports.mysqldump_cmd(config)
+    
     grunt.log.oklns "dump command: " + cmd
+    
     output = shell.exec(cmd,
       silent: true
     ).output
+    
     grunt.file.write output_paths.file, output
     grunt.log.oklns "Database DUMP succesfully exported to: " + output_paths.file
+    
     return
 
   
   #==========  Caliper mods  ==========
-  
-  exports.db_dump_ess = (config, output_paths) ->
-    grunt.file.mkdir output_paths.dir
-    return  unless config.table_prefix
+
+
+  exports.prefixed_mysqldump_cmd = (config) ->
+
     prefix_matches = exports.all_table_prefix_matches(config)
     grunt.log.oklns "Prefix matches from '" + config.table_prefix + "'"
     console.log prefix_matches
+
     tables_to_dump = exports.tables_to_dump(config, prefix_matches)
     grunt.log.oklns "Tables to dump"
+
     console.log tables_to_dump
     prefixed_sqldump = exports.prefixed_sqldump(config, tables_to_dump)
     grunt.file.write output_paths.file, prefixed_sqldump
@@ -50,6 +63,7 @@ exports.init = (grunt) ->
         user: config.user
         pass: config.pass
         database: config.database
+        host: config.host
     )
     tables_sql = grunt.template.process(prefix_match_tpls.sql,
       data:
@@ -65,12 +79,31 @@ exports.init = (grunt) ->
         tables_sql: tables_sql
     )
     
+    if typeof config.ssh_host is "undefined"
+      grunt.log.oklns "Getting prefix matches in LOCAL db/prefix ['" + config.database + "'/'" + config.table_prefix + "']"
+    else
+      grunt.log.oklns "Getting prefix matches in REMOTE db/prefix ['" + config.database + "'/'" + config.table_prefix + "']"
+      tpl_ssh = grunt.template.process(tpls.ssh,
+        data:
+          host: config.ssh_host
+      )
+      prefix_matches_cmd = tpl_ssh + " \"" + prefix_matches_cmd.replace( /\"/g, '\\"' ) + "\""
+
     # console.log('cmd \n' + prefix_matches_cmd);
     prefix_matches = shell.exec(prefix_matches_cmd,
       silent: true
-    ).output.replace(/(\r\n|\n|\r)/g, "")
+    ).output
+
+    # Make sure to remove 'stdin: is not a tty' if that error appears
+    # Fix : On the destination server, edit /etc/bashrc file and comment out the "mesg y" line.
+    # http://www.linux.org/threads/stdin-is-not-a-tty.16/?codekitCB=415084070.551448
+    prefix_matches = prefix_matches.replace(/stdin: is not a tty/g, "")
+
+    # Remove new lines/return chars
+    prefix_matches = prefix_matches.replace(/(\r\n|\n|\r)/g, "")
     
-    # console.log('matches [' + prefix_matches +']');
+    # console.log prefix_matches
+
     prefix_matches.split " "
 
   
@@ -90,6 +123,7 @@ exports.init = (grunt) ->
         user: config.user
         pass: config.pass
         database: config.database
+        host: config.host
     )
     comparison = ""
     i = 0
@@ -122,26 +156,53 @@ exports.init = (grunt) ->
         sql_connect: sql_connect
         sql: sql
     )
+
     
+    cmd = exports.add_ssh_connect config, cmd if config.ssh_host?
+
+    console.log "tables to dump cmd \n" + cmd
+
     # Make sure you strip the new line chars
     tables_to_dump = shell.exec(cmd,
       silent: true
-    ).output.replace(/(\r\n|\n|\r)/g, "")
+    ).output
+
+    console.log "tables_to_dump\n" + tables_to_dump
+
+    tables_to_dump.replace(/(\r\n|\n|\r)/g, "")
     tables_to_dump.split " "
 
   
   # Run the mysqldump cmd and append the table names from exports.tables_to_dump() fn
   exports.prefixed_sqldump = (config, tables_to_dump) ->
     return false  unless tables_to_dump
-    cmd = exports.mysqldump_cmd(config)
-    cmd += " " + tables_to_dump.join(" ")
-    dump_output = shell.exec(cmd,
-      silent: true
-    ).output
-    dump_output
+    cmd = exports.mysqldump_cmd(config) + " " + tables_to_dump.join(" ")
 
+    if typeof config.ssh_host is "undefined"
+      grunt.log.oklns "Creating prefixed DUMP of local database [" + config.database + "/" + config.table_prefix + "]"
+    else
+      grunt.log.oklns "Creating prefixed DUMP of remote database [" + config.database + "/" + config.table_prefix + "]"
+      # tpl_ssh = grunt.template.process(tpls.ssh,
+      #   data:
+      #     host: config.ssh_host
+      # )
+      # cmd = tpl_ssh + " \"" + cmd + "\""
+
+    console.log "prefixed sqldump cmd\n" + cmd
+    cmd
   
+  exports.add_ssh_connect = ( config, cmd ) ->
+    tpl_ssh = grunt.template.process(tpls.ssh,
+      data:
+        host: config.ssh_host
+    )
+    cmd = tpl_ssh + " " + cmd
+    console.log cmd, 'add ssh connect'
+    cmd
+
   #==========  Caliper mods  ==========
+
+
   exports.db_import = (config, src) ->
     shell.exec exports.mysql_cmd(config, src)
     grunt.log.oklns "Database imported succesfully"
@@ -248,9 +309,9 @@ exports.init = (grunt) ->
         host: config.host
     )
     if typeof config.ssh_host is "undefined"
-      grunt.log.oklns "Creating DUMP of local database [" + config.database + "]"
+      grunt.log.oklns "Building dump cmd for LOCAL database [" + config.database + "]"
     else
-      grunt.log.oklns "Creating DUMP of remote database"
+      grunt.log.oklns "Building dump cmd for REMOTE database [" + config.database + "]"
       tpl_ssh = grunt.template.process(tpls.ssh,
         data:
           host: config.ssh_host
@@ -306,7 +367,7 @@ exports.init = (grunt) ->
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"
     mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>"
     mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>"
-    sql_connect: "mysql <%= database %> -u <%= user %> --password=<%= pass %>"
+    sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password=<%= pass %>"
     rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>"
     rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>"
     ssh: "ssh <%= host %>"
