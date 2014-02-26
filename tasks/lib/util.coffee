@@ -9,6 +9,8 @@ exports.init = (grunt) ->
   exports.db_dump = (config, output_paths) ->
     grunt.file.mkdir output_paths.dir
 
+    console.log config, 'config'
+
     if config.table_prefix
       console.log "Using table prefix " + config.table_prefix
       cmd = exports.prefixed_mysqldump_cmd(config)
@@ -16,7 +18,8 @@ exports.init = (grunt) ->
       console.log "NOT using table prefix " + config.table_prefix
       cmd = exports.mysqldump_cmd(config)
     
-    grunt.log.oklns "dump command: " + cmd
+    grunt.log.oklns "dump command:"
+    console.log cmd
     
     output = shell.exec(cmd,
       silent: true
@@ -31,7 +34,7 @@ exports.init = (grunt) ->
   #==========  Caliper mods  ==========
 
 
-  exports.prefixed_mysqldump_cmd = (config) ->
+  exports.prefixed_mysqldump_cmd = (config, output_paths) ->
 
     prefix_matches = exports.all_table_prefix_matches(config)
     grunt.log.oklns "Prefix matches from '" + config.table_prefix + "'"
@@ -41,10 +44,9 @@ exports.init = (grunt) ->
     grunt.log.oklns "Tables to dump"
 
     console.log tables_to_dump
-    prefixed_sqldump = exports.prefixed_sqldump(config, tables_to_dump)
-    grunt.file.write output_paths.file, prefixed_sqldump
-    grunt.log.oklns "Database DUMP for '" + config.table_prefix + "' succesfully exported to: " + output_paths.file
-    return
+    
+    # Return the cmd
+    exports.build_prefixed_sqldump(config, tables_to_dump)
 
   
   # Find all table prefix that match the config.table_prefix
@@ -160,35 +162,28 @@ exports.init = (grunt) ->
     
     cmd = exports.add_ssh_connect config, cmd if config.ssh_host?
 
-    console.log "tables to dump cmd \n" + cmd
+    # console.log "tables to dump cmd \n" + cmd
 
     # Make sure you strip the new line chars
     tables_to_dump = shell.exec(cmd,
       silent: true
-    ).output
+    ).output.replace(/(\r\n|\n|\r)/g, "")
 
-    console.log "tables_to_dump\n" + tables_to_dump
+    # console.log "tables_to_dump\n" + tables_to_dump
 
-    tables_to_dump.replace(/(\r\n|\n|\r)/g, "")
     tables_to_dump.split " "
 
   
   # Run the mysqldump cmd and append the table names from exports.tables_to_dump() fn
-  exports.prefixed_sqldump = (config, tables_to_dump) ->
+  exports.build_prefixed_sqldump = (config, tables_to_dump) ->
     return false  unless tables_to_dump
     cmd = exports.mysqldump_cmd(config) + " " + tables_to_dump.join(" ")
 
-    if typeof config.ssh_host is "undefined"
-      grunt.log.oklns "Creating prefixed DUMP of local database [" + config.database + "/" + config.table_prefix + "]"
-    else
-      grunt.log.oklns "Creating prefixed DUMP of remote database [" + config.database + "/" + config.table_prefix + "]"
-      # tpl_ssh = grunt.template.process(tpls.ssh,
-      #   data:
-      #     host: config.ssh_host
-      # )
-      # cmd = tpl_ssh + " \"" + cmd + "\""
+    dest = if config.ssh_host? then 'remote' else 'local'
 
-    console.log "prefixed sqldump cmd\n" + cmd
+    grunt.log.oklns "Creating prefixed DUMP of " + dest + " database [" + config.database + "/" + config.table_prefix + "]"
+
+    # console.log "prefixed sqldump cmd\n" + cmd
     cmd
   
   exports.add_ssh_connect = ( config, cmd ) ->
@@ -196,8 +191,8 @@ exports.init = (grunt) ->
       data:
         host: config.ssh_host
     )
-    cmd = tpl_ssh + " " + cmd
-    console.log cmd, 'add ssh connect'
+    cmd = tpl_ssh + " \"" + cmd.replace( /\"/g, '\\"' ) + "\""
+    # console.log cmd, 'add ssh connect'
     cmd
 
   #==========  Caliper mods  ==========
