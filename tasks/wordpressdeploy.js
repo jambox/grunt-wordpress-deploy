@@ -76,18 +76,16 @@ module.exports = function(grunt) {
     // Start execution
     grunt.log.subhead("Pulling database from '" + target_options.title + "' into Local");
 
-    // // Dump Target DB
-    // util.db_dump(target_options, target_backup_paths );
+    // Dump Target DB
+    util.db_dump(target_options, target_backup_paths );
 
-    // util.db_adapt(target_options.url,local_options.url,target_backup_paths.file);
+    util.db_adapt(target_options.url,local_options.url,target_backup_paths.file);
 
-    // // Backup Local DB
-    // util.db_dump(local_options, local_backup_paths);
+    // Backup Local DB
+    util.db_dump(local_options, local_backup_paths);
 
-    util.db_dump_ess(local_options, local_backup_paths);
-
-    // // Import dump into Local
-    // util.db_import(local_options,target_backup_paths.file);
+    // Import dump into Local
+    util.db_import(local_options,target_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
   });
