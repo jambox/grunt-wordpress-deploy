@@ -61,9 +61,18 @@ module.exports = function(grunt) {
       },
     },
 
-
     nodeunit: {
       tasks: ['test/*_test.js']
+    },
+
+    watch: {
+      scripts: {
+        files: ['**/*.coffee'],
+        tasks: ['coffee'],
+        options: {
+          spawn: false,
+        },
+      },
     },
 
   });
@@ -74,6 +83,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
   grunt.loadNpmTasks('grunt-contrib-coffee');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result.
