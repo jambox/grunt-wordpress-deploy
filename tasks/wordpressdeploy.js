@@ -41,13 +41,13 @@ module.exports = function(grunt) {
     util.db_dump(local_options, local_backup_paths);
 
     // Search and Replace database refs
-    util.db_adapt(local_options.url, target_options.url, local_backup_paths.file);
+    util.db_adapt(local_options, target_options, local_backup_paths.file);
 
     // Dump target DB
     util.db_dump(target_options, target_backup_paths);
 
     // Import dump to target DB
-    util.db_import(target_options, local_backup_paths.file);
+    // util.db_import(target_options, local_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
   });
@@ -79,7 +79,7 @@ module.exports = function(grunt) {
     // Dump Target DB
     util.db_dump(target_options, target_backup_paths );
 
-    util.db_adapt(target_options.url,local_options.url,target_backup_paths.file);
+    util.db_adapt(target_options,local_options,target_backup_paths.file);
 
     // Backup Local DB
     util.db_dump(local_options, local_backup_paths);
