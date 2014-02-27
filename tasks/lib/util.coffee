@@ -28,21 +28,18 @@ exports.init = (grunt) ->
     
     return
 
-  
-  #==========  Caliper mods  ==========
-
 
   exports.prefixed_mysqldump_cmd = (config, output_paths) ->
 
     prefix_matches = exports.all_table_prefix_matches(config)
     grunt.log.oklns "Prefix matches from search '" + config.table_prefix + "'"
-    console.log grunt.log.wordlist( prefix_matches )
+    start_ln = '  + '
+    console.log start_ln + grunt.log.wordlist( prefix_matches, { separator: '\n' + start_ln } )
 
     tables_to_dump = exports.tables_to_dump(config, prefix_matches)
     grunt.log.oklns "Tables to dump"
 
-    # grunt.log.verbose 'verbosion test'
-    console.log grunt.log.wordlist( tables_to_dump )
+    console.log start_ln + grunt.log.wordlist( tables_to_dump, { separator: '\n' + start_ln } )
     
     # Return the cmd
     exports.build_prefixed_sqldump(config, tables_to_dump)
@@ -195,8 +192,6 @@ exports.init = (grunt) ->
     # console.log cmd, 'add ssh connect'
     cmd
 
-  #==========  Caliper mods  ==========
-
 
   exports.db_import = (config, src) ->
     shell.exec exports.mysql_cmd(config, src)
@@ -246,14 +241,12 @@ exports.init = (grunt) ->
     exclusions
 
   exports.db_adapt = (search_options, replace_options, file) ->
-    grunt.log.oklns "Adapt the database:"
-    grunt.writeln
 
     old_url = search_options.url
     new_url = replace_options.url
 
     content = grunt.file.read(file)
-    grunt.log.oklns "set the correct urls for the destination in the database..."
+    grunt.log.oklns "Set the correct urls for the destination in the database..."
     console.log { old_url, new_url }
     grunt.writeln
 
@@ -261,9 +254,7 @@ exports.init = (grunt) ->
 
     old_prefix = search_options.table_prefix
     new_prefix = replace_options.table_prefix
-    grunt.log.oklns "New/Old prefixes"
-    grunt.writeln
-    console.log { old_prefix, new_prefix }
+    grunt.log.oklns "New prefix:" + new_prefix + " / Old prefix:" + old_prefix
     
     if old_prefix && new_prefix
       grunt.log.ok "Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]..."
@@ -275,10 +266,10 @@ exports.init = (grunt) ->
     return
 
   exports.replace_urls = (search, replace, content) ->
-    console.log 'replacing urls in serialized'
     content = exports.replace_urls_in_serialized(search, replace, content)
-    console.log 'replacing urls in string'
+    grunt.log.ok 'Replaced URLs in serialized data'
     content = exports.replace_urls_in_string(search, replace, content)
+    grunt.log.ok 'Replaced URLs in string'
     content
 
   exports.replace_table_prefix = (old_prefix, new_prefix, sqldump_output) ->

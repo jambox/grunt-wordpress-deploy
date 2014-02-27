@@ -79,6 +79,7 @@ module.exports = function(grunt) {
     // Dump Target DB
     util.db_dump(target_options, target_backup_paths );
 
+    grunt.log.subhead("Adapting sqldump to target");
     util.db_adapt(target_options,local_options,target_backup_paths.file);
 
     // Backup Local DB
