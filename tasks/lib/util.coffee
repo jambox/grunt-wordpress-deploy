@@ -3,23 +3,21 @@
 exports.init = (grunt) ->
   shell = require("shelljs")
   lineReader = require("line-reader")
-  
   exports = {}
 
   exports.db_dump = (config, output_paths) ->
+
     grunt.file.mkdir output_paths.dir
 
-    console.log config, 'config'
-
     if config.table_prefix
-      console.log "Using table prefix " + config.table_prefix
+      # grunt.log.oklns "Using table prefix \"" + config.table_prefix + "\""
       cmd = exports.prefixed_mysqldump_cmd(config)
     else
-      console.log "NOT using table prefix " + config.table_prefix
+      # grunt.log.oklns "NOT using table prefix \"" + config.table_prefix + "\""
       cmd = exports.mysqldump_cmd(config)
     
-    grunt.log.oklns "dump command:"
-    console.log cmd
+    # grunt.log.oklns "dump command:"
+    # console.log cmd
     
     output = shell.exec(cmd,
       silent: true
@@ -37,13 +35,14 @@ exports.init = (grunt) ->
   exports.prefixed_mysqldump_cmd = (config, output_paths) ->
 
     prefix_matches = exports.all_table_prefix_matches(config)
-    grunt.log.oklns "Prefix matches from '" + config.table_prefix + "'"
-    console.log prefix_matches
+    grunt.log.oklns "Prefix matches from search '" + config.table_prefix + "'"
+    console.log grunt.log.wordlist( prefix_matches )
 
     tables_to_dump = exports.tables_to_dump(config, prefix_matches)
     grunt.log.oklns "Tables to dump"
 
-    console.log tables_to_dump
+    # grunt.log.verbose 'verbosion test'
+    console.log grunt.log.wordlist( tables_to_dump )
     
     # Return the cmd
     exports.build_prefixed_sqldump(config, tables_to_dump)
@@ -80,11 +79,12 @@ exports.init = (grunt) ->
         sql_connect: sql_connect
         tables_sql: tables_sql
     )
+
+    dest = if config.ssh_host? then 'remote' else 'local'
+
+    grunt.log.ok "Getting prefix matches from " + dest + " db:'" + config.database + "' prefix:'" + config.table_prefix + "'"
     
-    if typeof config.ssh_host is "undefined"
-      grunt.log.oklns "Getting prefix matches in LOCAL db/prefix ['" + config.database + "'/'" + config.table_prefix + "']"
-    else
-      grunt.log.oklns "Getting prefix matches in REMOTE db/prefix ['" + config.database + "'/'" + config.table_prefix + "']"
+    if config.ssh_host?
       tpl_ssh = grunt.template.process(tpls.ssh,
         data:
           host: config.ssh_host
@@ -181,7 +181,7 @@ exports.init = (grunt) ->
 
     dest = if config.ssh_host? then 'remote' else 'local'
 
-    grunt.log.oklns "Creating prefixed DUMP of " + dest + " database [" + config.database + "/" + config.table_prefix + "]"
+    grunt.log.ok "Creating DUMP of " + dest + " database '" + config.database + "' with prefix '" + config.table_prefix + "'"
 
     # console.log "prefixed sqldump cmd\n" + cmd
     cmd
@@ -245,21 +245,49 @@ exports.init = (grunt) ->
     exclusions = exclusions.trim()
     exclusions
 
-  exports.db_adapt = (old_url, new_url, file) ->
-    grunt.log.oklns "Adapt the database: set the correct urls for the destination in the database."
+  exports.db_adapt = (search_options, replace_options, file) ->
+    grunt.log.oklns "Adapt the database:"
+    grunt.writeln
+
+    old_url = search_options.url
+    new_url = replace_options.url
+
     content = grunt.file.read(file)
+    grunt.log.oklns "set the correct urls for the destination in the database..."
+    console.log { old_url, new_url }
+    grunt.writeln
+
     output = exports.replace_urls(old_url, new_url, content)
+
+    old_prefix = search_options.table_prefix
+    new_prefix = replace_options.table_prefix
+    grunt.log.oklns "New/Old prefixes"
+    grunt.writeln
+    console.log { old_prefix, new_prefix }
+    
+    if old_prefix && new_prefix
+      grunt.log.ok "Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]..."
+      # output = exports.replace_table_prefix( old_prefix, new_prefix, output )
+
+    output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today("yyyy-mm-dd at HH-MM-ss") + "\n" + output
+
     grunt.file.write file, output
     return
 
   exports.replace_urls = (search, replace, content) ->
+    console.log 'replacing urls in serialized'
     content = exports.replace_urls_in_serialized(search, replace, content)
+    console.log 'replacing urls in string'
     content = exports.replace_urls_in_string(search, replace, content)
     content
 
+  exports.replace_table_prefix = (old_prefix, new_prefix, sqldump_output) ->
+    regexp = new RegExp("(?!" + new_prefix + ")(" + old_prefix + ")", "g")
+    sqldump_output.replace regexp, new_prefix
+
   exports.replace_urls_in_serialized = (search, replace, string) ->
     length_delta = search.length - replace.length
-    
+
     # Replace for serialized data
     matches = undefined
     length = undefined
@@ -277,7 +305,7 @@ exports.init = (grunt) ->
       if target_string.indexOf(search) isnt -1
         length = matches[1]
         delimiter = matches[2]
-        
+
         # Replace the url
         new_url = target_string.replace(search, replace)
         length -= length_delta
@@ -304,9 +332,9 @@ exports.init = (grunt) ->
         host: config.host
     )
     if typeof config.ssh_host is "undefined"
-      grunt.log.oklns "Building dump cmd for LOCAL database [" + config.database + "]"
+      # grunt.log.oklns "Building dump cmd for LOCAL database [" + config.database + "]"
     else
-      grunt.log.oklns "Building dump cmd for REMOTE database [" + config.database + "]"
+      # grunt.log.oklns "Building dump cmd for REMOTE database [" + config.database + "]"
       tpl_ssh = grunt.template.process(tpls.ssh,
         data:
           host: config.ssh_host
