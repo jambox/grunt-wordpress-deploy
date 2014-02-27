@@ -289,15 +289,9 @@ exports.init = (grunt) ->
     length_delta = search.length - replace.length
 
     # Replace for serialized data
-    matches = undefined
-    length = undefined
-    delimiter = undefined
-    old_serialized_data = undefined
-    target_string = undefined
-    new_url = undefined
     regexp = /s:(\d+):([\\]*['"])(.*?)\2;/g
-    matches = regexp.exec(string)
-    while matches
+  
+    while matches = regexp.exec(string)
       old_serialized_data = matches[0]
       target_string = matches[3]
       
