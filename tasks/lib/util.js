@@ -1,379 +1,380 @@
-'use strict';
-
-exports.init = function (grunt) {
-  var shell = require('shelljs');
-  var lineReader = require("line-reader");
-
-  var exports = {};
-
-  exports.db_dump = function(config, output_paths) {
-    grunt.file.mkdir(output_paths.dir);
-
-    var cmd = exports.mysqldump_cmd(config);
-
-    grunt.log.oklns("dump command: " + cmd);
-
-    var output = shell.exec(cmd, {silent: true}).output;
-
-    grunt.file.write(output_paths.file, output);
-    grunt.log.oklns("Database DUMP succesfully exported to: " + output_paths.file);
-  };
-
-  /*==========  Caliper mods  ==========*/
-  
-
-  exports.db_dump_ess = function(config, output_paths) {
-    grunt.file.mkdir(output_paths.dir);
-
-    var prefix_matches = exports.all_table_prefix_matches(config);
-
-    grunt.log.oklns("Prefix matches from '" + config.table_prefix + "'");
-    console.log(prefix_matches);
-
-    var tables_to_dump = exports.tables_to_dump(config, prefix_matches);
-    grunt.log.oklns("Tables to dump");
-    console.log( tables_to_dump );
-
-    var prefixed_sqldump = exports.prefixed_sqldump(config, tables_to_dump);
-
-    grunt.file.write(output_paths.file, prefixed_sqldump);
-    grunt.log.oklns("Database DUMP for '" + config.table_prefix + "' succesfully exported to: " + output_paths.file);
-  };
-
-  // Find all table prefix that match the config.table_prefix
-  // (i.e. the prefix 'wp_' could match 'wp_', 'wp_backup_', etc.)  
-  exports.all_table_prefix_matches = function( config ){
-    var table_prefix = config.table_prefix || 'wp_';
-
-    var prefix_match_tpls = {
-      sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" AND TABLE_NAME LIKE "<%= table_prefix %>%posts";',
-      prefix_matches_cmd : "<%= sql_connect %> '<%= tables_sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g' | xargs "
-    }
-
-    // var works_in_shell = "mysql wordpress -u admin --password=admin -e 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"wordpress\" AND TABLE_NAME LIKE \"wp_%posts\";' | grep -v -e TABLE_NAME | sed -e 's/posts//g'";
-    // console.log( shell.exec( works_in_shell ).output ); return false;
-
-    var sql_connect = grunt.template.process(tpls.sql_connect, {
-      data: {
-        user: config.user,
-        pass: config.pass,
-        database: config.database
-      }
-    });
-
-    var tables_sql = grunt.template.process(prefix_match_tpls.sql, {
-      data: {
-        database: config.database,
-        table_prefix: table_prefix
-      }
-    });
-    // grunt.log.writeln('tables sql');
-    // console.log(tables_sql);
-    
-    var prefix_matches_cmd = grunt.template.process(prefix_match_tpls.prefix_matches_cmd, {
-      data: {
-        sql_connect: sql_connect,
-        tables_sql: tables_sql
-      }
-    });
-
-    // console.log('cmd \n' + prefix_matches_cmd);
-    var prefix_matches = shell.exec( prefix_matches_cmd, { silent: true } ).output.replace(/(\r\n|\n|\r)/gm,'');
-    // console.log('matches [' + prefix_matches +']');
-
-    return prefix_matches.split(' ');
-
-  };
-
-  // Return Array of tables to dump
-  // Builds a SQL statement that SELECTS table_names
-  //        LIKE '<%= config.table_prefix_ =>%'
-  //        and NOT LIKE '<%= other_matched_prefixes %>_'
-  exports.tables_to_dump = function(config, prefix_matches) {
-
-    var prefix_tpls = {
-      sql : '-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = "<%= database %>" <%= comparison %>;',
-      like : ' AND TABLE_NAME LIKE "<%= match %>%"',
-      not_like : ' AND TABLE_NAME NOT LIKE "<%= match %>%"',
-      cmd : "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | xargs ",
-    };
-
-    var sql_connect = grunt.template.process(tpls.sql_connect, {
-      data: {
-        user: config.user,
-        pass: config.pass,
-        database: config.database
-      }
-    });
-
-    var comparison = '';
-    for ( var i = 0; i < prefix_matches.length; i++ ) {
-      var match = prefix_matches[i];
-
-      if( !match ) {
-        continue;
-      }
-
-      if ( match == config.table_prefix ) {
-        comparison += grunt.template.process(prefix_tpls.like, { data: { match:match } } );        
-        // comparison += " AND TABLE_NAME LIKE '" + match + "%'";
+(function() {
+  "use strict";
+  exports.init = function(grunt) {
+    var exports, lineReader, shell, tpls;
+    shell = require("shelljs");
+    lineReader = require("line-reader");
+    exports = {};
+    exports.db_dump = function(config, output_paths) {
+      var cmd, output;
+      grunt.file.mkdir(output_paths.dir);
+      if (config.table_prefix) {
+        cmd = exports.prefixed_mysqldump_cmd(config);
       } else {
-        comparison += grunt.template.process(prefix_tpls.not_like, { data: { match:match } } );        
-        // comparison += " AND TABLE_NAME NOT LIKE '" + match + "%'";
+        cmd = exports.mysqldump_cmd(config);
       }
-    }
-
-    var sql = grunt.template.process(prefix_tpls.sql, {
-      data: {
-        database: config.database,
-        comparison: comparison
-      }
-    });
-
-    var cmd = grunt.template.process(prefix_tpls.cmd, {
-      data: {
-        sql_connect: sql_connect,
-        sql: sql
-      }
-    });
-
-    // Make sure you strip the new line chars
-    var tables_to_dump = shell.exec( cmd, { silent: true } ).output.replace(/(\r\n|\n|\r)/gm,'');
-
-    return tables_to_dump.split(' ');
-
-  };
-
-  // Run the mysqldump cmd and append the table names from exports.tables_to_dump() fn
-  exports.prefixed_sqldump = function(config, tables_to_dump){
-    if(!tables_to_dump) {
-      return false;
-    }
-
-    var cmd = exports.mysqldump_cmd(config);
-
-    cmd += ' ' + tables_to_dump.join(' ');
-
-    var dump_output = shell.exec( cmd, { silent: true } ).output;
-
-    return dump_output;
-  };
-
-
-  /*==========  Caliper mods  ==========*/
-
-
-  exports.db_import = function(config, src) {
-    shell.exec(exports.mysql_cmd(config, src));
-    grunt.log.oklns("Database imported succesfully");
-  };
-
-  exports.rsync_push = function(config) {
-    grunt.log.oklns("Syncing data from '" + config.from + "' to '" + config.to + "' with rsync.");
-
-    var cmd = exports.rsync_push_cmd(config);
-    grunt.log.writeln(cmd);
-
-    shell.exec(cmd);
-
-    grunt.log.oklns("Sync completed successfully.");
-  };
-
-  exports.rsync_pull = function(config) {
-    grunt.log.oklns("Syncing data from '" + config.from + "' to '" + config.to + "' with rsync.");
-
-    var cmd = exports.rsync_pull_cmd(config);
-    shell.exec(cmd);
-
-    grunt.log.oklns("Sync completed successfully.");
-  };
-
-  exports.generate_backup_paths = function(target, task_options) {
-
-    var backups_dir = task_options['backups_dir'] || "backups";
-
-    var directory = grunt.template.process(tpls.backup_path, {
-      data: {
-        backups_dir: backups_dir,
-        env: target,
-        date: grunt.template.today('yyyymmdd'),
-        time: grunt.template.today('HH-MM-ss'),
-      }
-    });
-
-    var filepath = directory + '/db_backup.sql';
-
-    return {
-      dir: directory,
-      file: filepath
+      output = shell.exec(cmd, {
+        silent: true
+      }).output;
+      grunt.file.write(output_paths.file, output);
+      grunt.log.oklns("Database DUMP succesfully exported to: " + output_paths.file);
     };
-  };
-
-  exports.compose_rsync_options = function(options) {
-    var args = options.join(' ');
-
-    return args;
-  };
-
-  exports.compose_rsync_exclusions = function(options) {
-    var exclusions = '';
-    var i = 0;
-
-    for(i = 0;i < options.length; i++) {
-      exclusions += "--exclude '" + options[i] + "' ";
-    }
-
-    exclusions = exclusions.trim();
-
-    return exclusions;
-  };
-
-  exports.db_adapt = function(old_url, new_url, file) {
-    grunt.log.oklns("Adapt the database: set the correct urls for the destination in the database.");
-    var content = grunt.file.read(file);
-
-    var output = exports.replace_urls(old_url, new_url, content);
-
-    grunt.file.write(file, output);
-  };
-
-  exports.replace_urls = function(search, replace, content) {
-    content = exports.replace_urls_in_serialized(search, replace, content);
-    content = exports.replace_urls_in_string(search, replace, content);
-
-    return content;
-  };
-
-  exports.replace_urls_in_serialized = function(search, replace, string) {
-    var length_delta = search.length - replace.length;
-
-    // Replace for serialized data
-    var matches, length, delimiter, old_serialized_data, target_string, new_url;
-    var regexp = /s:(\d+):([\\]*['"])(.*?)\2;/g;
-
-    while (matches = regexp.exec(string)) {
-      old_serialized_data = matches[0];
-      target_string = matches[3];
-
-      // If the string contains the url make the substitution
-      if (target_string.indexOf(search) !== -1) {
-        length = matches[1];
-        delimiter = matches[2];
-
-        // Replace the url
-        new_url = target_string.replace(search, replace);
-        length -= length_delta;
-
-        // Compose the new serialized data
-        var new_serialized_data = 's:' + length + ':' + delimiter + new_url + delimiter + ';';
-
-        // Replace the new serialized data into the dump
-        string = string.replace(old_serialized_data, new_serialized_data);
+    exports.prefixed_mysqldump_cmd = function(config, output_paths) {
+      var prefix_matches, start_ln, tables_to_dump;
+      prefix_matches = exports.all_table_prefix_matches(config);
+      grunt.log.oklns("Prefix matches from search '" + config.table_prefix + "'");
+      start_ln = '  + ';
+      console.log(start_ln + grunt.log.wordlist(prefix_matches, {
+        separator: '\n' + start_ln
+      }));
+      tables_to_dump = exports.tables_to_dump(config, prefix_matches);
+      grunt.log.oklns("Tables to dump");
+      console.log(start_ln + grunt.log.wordlist(tables_to_dump, {
+        separator: '\n' + start_ln
+      }));
+      return exports.build_prefixed_sqldump(config, tables_to_dump);
+    };
+    exports.all_table_prefix_matches = function(config) {
+      var dest, prefix_match_tpls, prefix_matches, prefix_matches_cmd, sql_connect, table_prefix, tables_sql, tpl_ssh;
+      table_prefix = config.table_prefix || "wp_";
+      prefix_match_tpls = {
+        sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" AND TABLE_NAME LIKE \"<%= table_prefix %>%posts\";",
+        prefix_matches_cmd: "<%= sql_connect %> '<%= tables_sql %>' | grep -v -e TABLE_NAME | sed -e 's/posts//g' | xargs "
+      };
+      sql_connect = grunt.template.process(tpls.sql_connect, {
+        data: {
+          user: config.user,
+          pass: config.pass,
+          database: config.database,
+          host: config.host
+        }
+      });
+      tables_sql = grunt.template.process(prefix_match_tpls.sql, {
+        data: {
+          database: config.database,
+          table_prefix: table_prefix
+        }
+      });
+      prefix_matches_cmd = grunt.template.process(prefix_match_tpls.prefix_matches_cmd, {
+        data: {
+          sql_connect: sql_connect,
+          tables_sql: tables_sql
+        }
+      });
+      dest = config.ssh_host != null ? 'remote' : 'local';
+      grunt.log.ok("Getting prefix matches from " + dest + " db:'" + config.database + "' prefix:'" + config.table_prefix + "'");
+      if (config.ssh_host != null) {
+        tpl_ssh = grunt.template.process(tpls.ssh, {
+          data: {
+            host: config.ssh_host
+          }
+        });
+        prefix_matches_cmd = tpl_ssh + " \"" + prefix_matches_cmd.replace(/\"/g, '\\"') + "\"";
       }
-    }
-
-    return string;
-  };
-
-  exports.replace_urls_in_string = function (search, replace, string) {
-    var regexp = new RegExp('(?!' + replace + ')(' + search + ')', 'g');
-    return string.replace(regexp, replace);
-  };
-
-  /* Commands generators */
-  exports.mysqldump_cmd = function(config) {
-    var cmd = grunt.template.process(tpls.mysqldump, {
-      data: {
-        user: config.user,
-        pass: config.pass,
-        database: config.database,
-        host: config.host
+      prefix_matches = shell.exec(prefix_matches_cmd, {
+        silent: true
+      }).output;
+      prefix_matches = prefix_matches.replace(/stdin: is not a tty/g, "");
+      prefix_matches = prefix_matches.replace(/(\r\n|\n|\r)/g, "");
+      return prefix_matches.split(" ");
+    };
+    exports.tables_to_dump = function(config, prefix_matches) {
+      var cmd, comparison, i, match, prefix_tpls, sql, sql_connect, tables_to_dump;
+      prefix_tpls = {
+        sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" <%= comparison %>;",
+        like: " AND TABLE_NAME LIKE \"<%= match %>%\"",
+        not_like: " AND TABLE_NAME NOT LIKE \"<%= match %>%\"",
+        cmd: "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | xargs "
+      };
+      sql_connect = grunt.template.process(tpls.sql_connect, {
+        data: {
+          user: config.user,
+          pass: config.pass,
+          database: config.database,
+          host: config.host
+        }
+      });
+      comparison = "";
+      i = 0;
+      while (i < prefix_matches.length) {
+        match = prefix_matches[i];
+        if (!match) {
+          continue;
+        }
+        if (match === config.table_prefix) {
+          comparison += grunt.template.process(prefix_tpls.like, {
+            data: {
+              match: match
+            }
+          });
+        } else {
+          comparison += grunt.template.process(prefix_tpls.not_like, {
+            data: {
+              match: match
+            }
+          });
+        }
+        i++;
       }
-    });
-
-    if (typeof config.ssh_host === "undefined") {
-      grunt.log.oklns("Creating DUMP of local database [" + config.database + "]");
-    } else {
-      grunt.log.oklns("Creating DUMP of remote database");
-      var tpl_ssh = grunt.template.process(tpls.ssh, {
+      sql = grunt.template.process(prefix_tpls.sql, {
+        data: {
+          database: config.database,
+          comparison: comparison
+        }
+      });
+      cmd = grunt.template.process(prefix_tpls.cmd, {
+        data: {
+          sql_connect: sql_connect,
+          sql: sql
+        }
+      });
+      if (config.ssh_host != null) {
+        cmd = exports.add_ssh_connect(config, cmd);
+      }
+      tables_to_dump = shell.exec(cmd, {
+        silent: true
+      }).output.replace(/(\r\n|\n|\r)/g, "");
+      return tables_to_dump.split(" ");
+    };
+    exports.build_prefixed_sqldump = function(config, tables_to_dump) {
+      var cmd, dest;
+      if (!tables_to_dump) {
+        return false;
+      }
+      cmd = exports.mysqldump_cmd(config) + " " + tables_to_dump.join(" ");
+      dest = config.ssh_host != null ? 'remote' : 'local';
+      grunt.log.ok("Creating DUMP of " + dest + " database '" + config.database + "' with prefix '" + config.table_prefix + "'");
+      return cmd;
+    };
+    exports.add_ssh_connect = function(config, cmd) {
+      var tpl_ssh;
+      tpl_ssh = grunt.template.process(tpls.ssh, {
         data: {
           host: config.ssh_host
         }
       });
-      cmd = tpl_ssh + " '" + cmd + "'";
-    }
-    return cmd;
-  };
-
-  exports.mysql_cmd = function(config, src) {
-    var cmd = grunt.template.process(tpls.mysql, {
-      data: {
-        host: config.host,
-        user: config.user,
-        pass: config.pass,
-        database: config.database,
-        path: src
-      }
-    });
-
-    if (typeof config.ssh_host === "undefined") {
-      grunt.log.oklns("Importing DUMP into local database");
-      cmd = cmd + " < " + src;
-      console.log( cmd );
-    } else {
-      var tpl_ssh = grunt.template.process(tpls.ssh, {
+      cmd = tpl_ssh + " \"" + cmd.replace(/\"/g, '\\"') + "\"";
+      return cmd;
+    };
+    exports.db_import = function(config, src) {
+      shell.exec(exports.mysql_cmd(config, src));
+      grunt.log.oklns("Database imported succesfully");
+    };
+    exports.rsync_push = function(config) {
+      var cmd;
+      grunt.log.oklns("Syncing data from '" + config.from + "' to '" + config.to + "' with rsync.");
+      cmd = exports.rsync_push_cmd(config);
+      grunt.log.writeln(cmd);
+      shell.exec(cmd);
+      grunt.log.oklns("Sync completed successfully.");
+    };
+    exports.rsync_pull = function(config) {
+      var cmd;
+      grunt.log.oklns("Syncing data from '" + config.from + "' to '" + config.to + "' with rsync.");
+      cmd = exports.rsync_pull_cmd(config);
+      shell.exec(cmd);
+      grunt.log.oklns("Sync completed successfully.");
+    };
+    exports.generate_backup_paths = function(target, task_options) {
+      var backups_dir, directory, filepath;
+      backups_dir = task_options.backups_dir || "backups";
+      directory = grunt.template.process(tpls.backup_path, {
         data: {
-          host: config.ssh_host
+          backups_dir: backups_dir,
+          env: target,
+          date: grunt.template.today("yyyymmdd"),
+          time: grunt.template.today("HH-MM-ss")
         }
       });
-
-      grunt.log.oklns("Importing DUMP into remote database");
-      cmd = tpl_ssh + " '" + cmd + "' < " + src;
-    }
-
-    return cmd;
-  };
-
-  exports.rsync_push_cmd = function(config) {
-    var cmd = grunt.template.process(tpls.rsync_push, {
-      data: {
-        rsync_args: config.rsync_args,
-        ssh_host: config.ssh_host,
-        from: config.from,
-        to: config.to,
-        exclusions: config.exclusions
+      filepath = directory + "/db_backup.sql";
+      return {
+        dir: directory,
+        file: filepath
+      };
+    };
+    exports.compose_rsync_options = function(options) {
+      var args;
+      args = options.join(" ");
+      return args;
+    };
+    exports.compose_rsync_exclusions = function(options) {
+      var exclusions, i;
+      exclusions = "";
+      i = 0;
+      i = 0;
+      while (i < options.length) {
+        exclusions += "--exclude '" + options[i] + "' ";
+        i++;
       }
-    });
-
-    return cmd;
-  };
-
-  exports.rsync_pull_cmd = function(config) {
-    var cmd = grunt.template.process(tpls.rsync_pull, {
-      data: {
-        rsync_args: config.rsync_args,
-        ssh_host: config.ssh_host,
-        from: config.from,
-        to: config.to,
-        exclusions: config.exclusions
+      exclusions = exclusions.trim();
+      return exclusions;
+    };
+    exports.db_adapt = function(search_options, replace_options, file) {
+      var content, new_prefix, new_url, old_prefix, old_url, output;
+      old_url = search_options.url;
+      new_url = replace_options.url;
+      content = grunt.file.read(file);
+      grunt.log.oklns("Set the correct urls for the destination in the database...");
+      console.log({
+        old_url: old_url,
+        new_url: new_url
+      });
+      grunt.writeln;
+      output = exports.replace_urls(old_url, new_url, content);
+      old_prefix = search_options.table_prefix;
+      new_prefix = replace_options.table_prefix;
+      grunt.log.oklns("New prefix:" + new_prefix + " / Old prefix:" + old_prefix);
+      if (old_prefix && new_prefix) {
+        grunt.log.ok("Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]...");
       }
-    });
+      output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output;
+      grunt.file.write(file, output);
+    };
+    exports.pd_tools_adapt = function(migrated_backup_paths, target_backup_paths, grunt) {
+      var acf_pair, acf_pairs, dest, replacements, src, _i, _len;
+      replacements = [];
+      replacements.push({
+        from: 'employees',
+        to: 'pd_tools_employee'
+      });
+      replacements.push({
+        from: 'shifts',
+        to: 'pd_tools_shift'
+      });
+      acf_pairs = [['field_52a2346d0a20d', 'field_50d37c5acaccf'], ['field_52a234290a20b', 'field_50d37d4c57cfc']];
+      for (_i = 0, _len = acf_pairs.length; _i < _len; _i++) {
+        acf_pair = acf_pairs[_i];
+        replacements.push({
+          from: acf_pair[1],
+          to: acf_pair[0]
+        });
+      }
+      src = [target_backup_paths.file];
+      dest = migrated_backup_paths.file;
+      grunt.option('migrate_src', src);
+      grunt.option('migrate_dest', dest);
+      grunt.task.run("pd_replace");
+      grunt.log.oklns('PD Replace task finished');
+    };
+    exports.replace_urls = function(search, replace, content) {
+      content = exports.replace_urls_in_serialized(search, replace, content);
+      grunt.log.ok('Replaced URLs in serialized data');
+      content = exports.replace_urls_in_string(search, replace, content);
+      grunt.log.ok('Replaced URLs in string');
+      return content;
+    };
+    exports.replace_table_prefix = function(old_prefix, new_prefix, sqldump_output) {
+      var regexp;
+      regexp = new RegExp("(?!" + new_prefix + ")(" + old_prefix + ")", "g");
+      return sqldump_output.replace(regexp, new_prefix);
+    };
+    exports.replace_urls_in_serialized = function(search, replace, string) {
+      var delimiter, length, length_delta, matches, new_serialized_data, new_url, old_serialized_data, regexp, target_string;
+      length_delta = search.length - replace.length;
+      regexp = /s:(\d+):([\\]*['"])(.*?)\2;/g;
+      while (matches = regexp.exec(string)) {
+        old_serialized_data = matches[0];
+        target_string = matches[3];
+        if (target_string.indexOf(search) !== -1) {
+          length = matches[1];
+          delimiter = matches[2];
+          new_url = target_string.replace(search, replace);
+          length -= length_delta;
+          new_serialized_data = "s:" + length + ":" + delimiter + new_url + delimiter + ";";
+          string = string.replace(old_serialized_data, new_serialized_data);
+        }
+      }
+      return string;
+    };
+    exports.replace_urls_in_string = function(search, replace, string) {
+      var regexp;
+      regexp = new RegExp("(?!" + replace + ")(" + search + ")", "g");
+      return string.replace(regexp, replace);
+    };
+    exports.mysqldump_cmd = function(config) {
+      var cmd, tpl_ssh;
+      cmd = grunt.template.process(tpls.mysqldump, {
+        data: {
+          user: config.user,
+          pass: config.pass,
+          database: config.database,
+          host: config.host
+        }
+      });
+      if (typeof config.ssh_host === "undefined") {
 
-    return cmd;
+      } else {
+        tpl_ssh = grunt.template.process(tpls.ssh, {
+          data: {
+            host: config.ssh_host
+          }
+        });
+        cmd = tpl_ssh + " '" + cmd + "'";
+      }
+      return cmd;
+    };
+    exports.mysql_cmd = function(config, src) {
+      var cmd, tpl_ssh;
+      cmd = grunt.template.process(tpls.mysql, {
+        data: {
+          host: config.host,
+          user: config.user,
+          pass: config.pass,
+          database: config.database,
+          path: src
+        }
+      });
+      if (typeof config.ssh_host === "undefined") {
+        grunt.log.oklns("Importing DUMP into local database");
+        cmd = cmd + " < " + src;
+        console.log(cmd);
+      } else {
+        tpl_ssh = grunt.template.process(tpls.ssh, {
+          data: {
+            host: config.ssh_host
+          }
+        });
+        grunt.log.oklns("Importing DUMP into remote database");
+        cmd = tpl_ssh + " '" + cmd + "' < " + src;
+      }
+      return cmd;
+    };
+    exports.rsync_push_cmd = function(config) {
+      var cmd;
+      cmd = grunt.template.process(tpls.rsync_push, {
+        data: {
+          rsync_args: config.rsync_args,
+          ssh_host: config.ssh_host,
+          from: config.from,
+          to: config.to,
+          exclusions: config.exclusions
+        }
+      });
+      return cmd;
+    };
+    exports.rsync_pull_cmd = function(config) {
+      var cmd;
+      cmd = grunt.template.process(tpls.rsync_pull, {
+        data: {
+          rsync_args: config.rsync_args,
+          ssh_host: config.ssh_host,
+          from: config.from,
+          to: config.to,
+          exclusions: config.exclusions
+        }
+      });
+      return cmd;
+    };
+    tpls = {
+      backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",
+      mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>",
+      mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>",
+      sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password=<%= pass %>",
+      rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>",
+      rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>",
+      ssh: "ssh <%= host %>"
+    };
+    return exports;
   };
 
-  var tpls = {
-    backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",
-    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>",
-    mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>",
-    sql_connect : "mysql <%= database %> -u <%= user %> --password=<%= pass %>",
-    rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>",
-    rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>",
-    ssh: "ssh <%= host %>",
-  };
-
-
-
-
-  return exports;
-};
+}).call(this);

@@ -1,8 +1,8 @@
 "use strict"
 
 exports.init = (grunt) ->
-  shell = require("shelljs")
-  lineReader = require("line-reader")
+  shell = require "shelljs"
+  lineReader = require "line-reader"
   exports = {}
 
   exports.db_dump = (config, output_paths) ->
@@ -260,9 +260,65 @@ exports.init = (grunt) ->
       grunt.log.ok "Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]..."
       # output = exports.replace_table_prefix( old_prefix, new_prefix, output )
 
-    output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today("yyyy-mm-dd at HH-MM-ss") + "\n" + output
+    output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output
 
     grunt.file.write file, output
+    return
+
+  #
+  #  DB Search and Replace
+  # 
+  #  Prepare old Pizza D Tools data for the new version
+  #  - Replace CPT names foreach post
+  #  - Replace existing ACF field keys in postmeta
+  #  - Replace existing ACF field keys in options table
+  #  - Delete existing extras_regular_prices and insert new ones
+  #
+  exports.pd_tools_adapt = ( migrated_backup_paths, target_backup_paths, grunt ) ->
+
+    #####################################
+    ###### START Currently Unused #########
+
+    replacements = []
+
+    # Replace CPT names
+    replacements.push
+      from: 'employees'
+      to: 'pd_tools_employee'
+
+    replacements.push
+      from: 'shifts'
+      to: 'pd_tools_shift'
+
+    #  [ new, old ]
+    acf_pairs = [
+      ['field_52a2346d0a20d', 'field_50d37c5acaccf']
+      ['field_52a234290a20b', 'field_50d37d4c57cfc']
+    ]
+
+    # Build replacements
+    for acf_pair in acf_pairs
+      replacements.push
+        from: acf_pair[1]
+        to: acf_pair[0]
+
+    ###### END Currently Unused #########
+    #####################################
+
+    # Set src and dest
+    src = [ target_backup_paths.file ]
+    dest = migrated_backup_paths.file
+
+    # Set src and dest in global options array to be used in task
+    grunt.option 'migrate_src', src
+    grunt.option 'migrate_dest', dest
+    # grunt.option 'migrate_replacements', replacements
+
+    # Run the task
+    grunt.task.run "pd_replace"
+
+    grunt.log.oklns 'PD Replace task finished'
+      
     return
 
   exports.replace_urls = (search, replace, content) ->
