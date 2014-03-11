@@ -244,31 +244,36 @@
       output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output;
       grunt.file.write(file, output);
     };
-    exports.pd_tools_adapt = function(migrated_backup_paths, target_backup_paths, grunt) {
-      var acf_pair, acf_pairs, dest, replacements, src, _i, _len;
-      replacements = [];
-      replacements.push({
-        from: 'employees',
-        to: 'pd_tools_employee'
+    exports.pd_tools_adapt = function(migrated_backup_paths, target_backup_paths, search_options, replace_options, grunt) {
+      var banner, content, dest, file, new_prefix, new_url, old_prefix, old_url, output, src;
+      file = target_backup_paths.file;
+      old_url = search_options.url;
+      new_url = replace_options.url;
+      content = grunt.file.read(file);
+      grunt.log.oklns("Set the correct urls for the destination in the database...");
+      console.log({
+        old_url: old_url,
+        new_url: new_url
       });
-      replacements.push({
-        from: 'shifts',
-        to: 'pd_tools_shift'
-      });
-      acf_pairs = [['field_52a2346d0a20d', 'field_50d37c5acaccf'], ['field_52a234290a20b', 'field_50d37d4c57cfc']];
-      for (_i = 0, _len = acf_pairs.length; _i < _len; _i++) {
-        acf_pair = acf_pairs[_i];
-        replacements.push({
-          from: acf_pair[1],
-          to: acf_pair[0]
-        });
+      grunt.writeln;
+      output = exports.replace_urls(old_url, new_url, content);
+      old_prefix = search_options.table_prefix;
+      new_prefix = replace_options.table_prefix;
+      grunt.log.oklns("New prefix:" + new_prefix + " / Old prefix:" + old_prefix);
+      if (old_prefix && new_prefix) {
+        grunt.log.ok("Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]...");
       }
-      src = [target_backup_paths.file];
+      output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output;
+      grunt.file.write(migrated_backup_paths.file, output);
+      grunt.log.subhead('Target DB URLs replaced with local URLs...');
+      src = [migrated_backup_paths.file];
       dest = migrated_backup_paths.file;
       grunt.option('migrate_src', src);
       grunt.option('migrate_dest', dest);
       grunt.task.run("pd_replace");
-      grunt.log.oklns('PD Replace task finished');
+      banner = "-- Database Adapted via grunt-wordpress-deploy + grunt-text-replace on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n--\n\n";
+      grunt.file.write(src, banner + grunt.file.read(src));
+      grunt.log.subhead('PD Replace tasks finished');
     };
     exports.replace_urls = function(search, replace, content) {
       content = exports.replace_urls_in_serialized(search, replace, content);
