@@ -79,11 +79,12 @@
       return prefix_matches.split(" ");
     };
     exports.tables_to_dump = function(config, prefix_matches) {
-      var cmd, comparison, i, match, prefix_tpls, sql, sql_connect, tables_to_dump;
+      var cmd, comparison, i, match, prefix_tpls, sql, sql_connect, table, table_exclusions, tables_to_dump, _i, _len, _ref;
       prefix_tpls = {
-        sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" <%= comparison %>;",
+        sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" <%= comparison %> <%= table_exclusions %>;",
         like: " AND TABLE_NAME LIKE \"<%= match %>%\"",
         not_like: " AND TABLE_NAME NOT LIKE \"<%= match %>%\"",
+        exclude_table: " AND TABLE_NAME NOT LIKE \"%<%= table %>%\"",
         cmd: "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | xargs "
       };
       sql_connect = grunt.template.process(tpls.sql_connect, {
@@ -116,10 +117,23 @@
         }
         i++;
       }
+      table_exclusions = '';
+      if (config.table_exclusions != null) {
+        _ref = config.table_exclusions;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          table = _ref[_i];
+          table_exclusions += grunt.template.process(prefix_tpls.exclude_table, {
+            data: {
+              table: table
+            }
+          });
+        }
+      }
       sql = grunt.template.process(prefix_tpls.sql, {
         data: {
           database: config.database,
-          comparison: comparison
+          comparison: comparison,
+          table_exclusions: table_exclusions
         }
       });
       cmd = grunt.template.process(prefix_tpls.cmd, {
@@ -182,7 +196,7 @@
         data: {
           backups_dir: backups_dir,
           env: target,
-          date: grunt.template.today("yyyymmdd"),
+          date: grunt.template.today("yyyy-mm-dd"),
           time: grunt.template.today("HH-MM-ss")
         }
       });

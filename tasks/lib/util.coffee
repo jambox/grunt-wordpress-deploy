@@ -112,9 +112,10 @@ exports.init = (grunt) ->
   #        and NOT LIKE '<%= other_matched_prefixes %>_'
   exports.tables_to_dump = (config, prefix_matches) ->
     prefix_tpls =
-      sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" <%= comparison %>;"
+      sql: "-e SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"<%= database %>\" <%= comparison %> <%= table_exclusions %>;"
       like: " AND TABLE_NAME LIKE \"<%= match %>%\""
       not_like: " AND TABLE_NAME NOT LIKE \"<%= match %>%\""
+      exclude_table: " AND TABLE_NAME NOT LIKE \"%<%= table %>%\""
       cmd: "<%= sql_connect %> '<%= sql %>' | grep -v -e TABLE_NAME | xargs "
 
     sql_connect = grunt.template.process(tpls.sql_connect,
@@ -129,7 +130,7 @@ exports.init = (grunt) ->
 
     while i < prefix_matches.length
       match = prefix_matches[i]
-      continue  unless match
+      continue unless match
       if match is config.table_prefix
         comparison += grunt.template.process(prefix_tpls.like,
           data:
@@ -143,12 +144,21 @@ exports.init = (grunt) ->
             match: match
         )
       i++
+
+    table_exclusions = ''
+    if config.table_exclusions?
+      for table in config.table_exclusions
+        table_exclusions += grunt.template.process(prefix_tpls.exclude_table,
+          data:
+            table: table
+        )
     
     # comparison += " AND TABLE_NAME NOT LIKE '" + match + "%'";
     sql = grunt.template.process(prefix_tpls.sql,
       data:
         database: config.database
         comparison: comparison
+        table_exclusions: table_exclusions
     )
     cmd = grunt.template.process(prefix_tpls.cmd,
       data:
