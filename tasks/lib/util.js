@@ -233,11 +233,11 @@
       exclusions = exclusions.trim();
       return exclusions;
     };
-    exports.db_adapt = function(search_options, replace_options, file) {
+    exports.db_adapt = function(search_options, replace_options, src_file, dest_file) {
       var content, new_prefix, new_url, old_prefix, old_url, output;
       old_url = search_options.url;
       new_url = replace_options.url;
-      content = grunt.file.read(file);
+      content = grunt.file.read(src_file);
       grunt.log.oklns("Set the correct urls for the destination in the database...");
       console.log({
         old_url: old_url,
@@ -250,9 +250,13 @@
       grunt.log.oklns("New prefix:" + new_prefix + " / Old prefix:" + old_prefix);
       if (old_prefix && new_prefix) {
         grunt.log.ok("Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]...");
+        output = exports.replace_table_prefix(old_prefix, new_prefix, output);
       }
       output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output;
-      grunt.file.write(file, output);
+      if (!dest_file) {
+        dest_file = src_file;
+      }
+      grunt.file.write(dest_file, output);
     };
     exports.pd_tools_adapt = function(migrated_backup_paths, target_backup_paths, search_options, replace_options, grunt, callback) {
       var banner, content, dest, file, new_prefix, new_url, old_prefix, old_url, output, src;

@@ -258,12 +258,12 @@ exports.init = (grunt) ->
     exclusions = exclusions.trim()
     exclusions
 
-  exports.db_adapt = (search_options, replace_options, file) ->
+  exports.db_adapt = (search_options, replace_options, src_file, dest_file) ->
 
     old_url = search_options.url
     new_url = replace_options.url
 
-    content = grunt.file.read(file)
+    content = grunt.file.read(src_file)
     grunt.log.oklns "Set the correct urls for the destination in the database..."
     console.log { old_url, new_url }
     grunt.writeln
@@ -276,11 +276,13 @@ exports.init = (grunt) ->
     
     if old_prefix && new_prefix
       grunt.log.ok "Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]..."
-      # output = exports.replace_table_prefix( old_prefix, new_prefix, output )
+      output = exports.replace_table_prefix( old_prefix, new_prefix, output )
 
     output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output
 
-    grunt.file.write file, output
+    dest_file = src_file if !dest_file
+
+    grunt.file.write dest_file, output
     return
 
   #

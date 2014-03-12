@@ -34,6 +34,7 @@ module.exports = function(grunt) {
     // Generate required backup directories and paths
     var local_backup_paths  = util.generate_backup_paths("local", task_options);
     var target_backup_paths = util.generate_backup_paths(target, task_options);
+    var dest_backup_paths = util.generate_backup_paths('adapted/'+target, task_options);
 
     grunt.log.subhead("Pushing database from 'Local' to '" + target_options.title + "'");
 
@@ -41,13 +42,13 @@ module.exports = function(grunt) {
     util.db_dump(local_options, local_backup_paths);
 
     // Search and Replace database refs
-    util.db_adapt(local_options, target_options, local_backup_paths.file);
+    util.db_adapt(local_options, target_options, local_backup_paths.file, dest_backup_paths.file);
 
     // Dump target DB
     util.db_dump(target_options, target_backup_paths);
 
     // Import dump to target DB
-    // util.db_import(target_options, local_backup_paths.file);
+    util.db_import(target_options, dest_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
   });
@@ -72,6 +73,7 @@ module.exports = function(grunt) {
     // Generate required backup directories and paths
     var local_backup_paths  = util.generate_backup_paths("local", task_options);
     var target_backup_paths = util.generate_backup_paths(target, task_options);
+    var dest_backup_paths = util.generate_backup_paths('adapted/'+target, task_options);
 
     // Start execution
     grunt.log.subhead("Pulling database from '" + target_options.title + "' into Local");
@@ -80,7 +82,7 @@ module.exports = function(grunt) {
     util.db_dump(target_options, target_backup_paths );
 
     grunt.log.subhead("Adapting sqldump to target");
-    util.db_adapt(target_options,local_options,target_backup_paths.file);
+    util.db_adapt(target_options,local_options,target_backup_paths.file, dest_backup_paths.file);
 
     // Backup Local DB
     util.db_dump(local_options, local_backup_paths);
