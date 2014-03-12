@@ -86,7 +86,7 @@ module.exports = function(grunt) {
     util.db_dump(local_options, local_backup_paths);
 
     // Import dump into Local
-    util.db_import(local_options,target_backup_paths.file);
+    // util.db_import(local_options,target_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
   });
@@ -150,4 +150,90 @@ module.exports = function(grunt) {
 
     util.rsync_pull(config);
   });
+
+  grunt.registerTask("pd_migrate", "Remote pull_db followed by pd_adapt.", function () {
+
+    /*==========  Pull DB  ==========*/
+    
+    var task_options = grunt.config.get('wordpressdeploy')['options'];
+    var target       = grunt.option('target') || task_options['target'];
+
+    if ( typeof target === "undefined" || typeof grunt.config.get('wordpressdeploy')[target] === "undefined")  {
+      grunt.fail.warn("Invalid target provided. I cannot pull a database from nowhere! Please checked your configuration and provide a valid target.", 6);
+    }
+
+    // Grab the options
+    var target_options      = grunt.config.get('wordpressdeploy')[target];
+    var local_options       = grunt.config.get('wordpressdeploy').local;
+
+    // Generate required backup directories and paths
+    var local_backup_paths  = util.generate_backup_paths("local", task_options);
+    var target_backup_paths = util.generate_backup_paths(target, task_options);
+    var migrated_backup_paths  = util.generate_backup_paths("pd-migrated", task_options);
+
+    grunt.option( 'migrated_backup_paths', migrated_backup_paths );
+
+    // Start execution
+    grunt.log.subhead("Pulling database from '" + target_options.title + "' into Local");
+
+    // Dump Target DB
+    util.db_dump(target_options, target_backup_paths);
+
+    // grunt.log.subhead("Adapting sqldump to target");
+    // util.db_adapt(target_options,local_options,target_backup_paths.file);
+
+    // Start execution of PD Tools Adapt
+    util.pd_tools_adapt(
+      migrated_backup_paths,
+      target_backup_paths,
+      target_options,
+      local_options,
+      grunt
+    );
+
+    // Backup Local DB
+    util.db_dump(local_options, local_backup_paths);
+
+    grunt.log.subhead("Migration Complete");
+
+    // Import dump into Local
+    // util.db_import(local_options,migrated_backup_paths.file);
+    grunt.task.run('import_db');
+
+    grunt.task.run('acf_import');
+
+  });
+
+  grunt.registerTask("import_db", "Import migrated db into local db.", function () {
+
+    grunt.log.subhead("Running PD Import DB");
+
+    var task_options = grunt.config.get('wordpressdeploy')['options'];
+    var target       = grunt.option('target') || task_options['target'];
+
+    if ( typeof target === "undefined" || typeof grunt.config.get('wordpressdeploy')[target] === "undefined")  {
+      grunt.fail.warn("Invalid target provided. I cannot pull a database from nowhere! Please checked your configuration and provide a valid target.", 6);
+    }
+
+    // Grab the options
+    var target_options      = grunt.config.get('wordpressdeploy')[target];
+    var local_options       = grunt.config.get('wordpressdeploy').local;
+
+    var migrated_backup_paths = grunt.option('migrated_backup_paths');
+
+    grunt.log.subhead("Importing DB");
+
+    util.db_import(local_options,migrated_backup_paths.file);
+
+  });
+
+  grunt.registerTask("acf_import", "Import all ACFs using acf-wp-cli.", function () {
+
+    grunt.log.subhead("Importing all ACFs");
+    util.acf_import();
+    grunt.log.ok();
+
+  });
+
+
 };
