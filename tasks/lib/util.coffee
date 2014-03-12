@@ -19,6 +19,8 @@ exports.init = (grunt) ->
     # grunt.log.oklns "dump command:"
     # console.log cmd
     
+    if !cmd then return false
+
     output = shell.exec(cmd,
       silent: true
     ).output
@@ -34,6 +36,11 @@ exports.init = (grunt) ->
     prefix_matches = exports.all_table_prefix_matches(config)
     grunt.log.oklns "Prefix matches from search '" + config.table_prefix + "'"
     start_ln = '  + '
+
+    if prefix_matches.length is 0
+      grunt.log.errorlns "No prefix matches found for '" + config.table_prefix + "'"
+      return false
+
     console.log start_ln + grunt.log.wordlist( prefix_matches, { separator: '\n' + start_ln } )
 
     tables_to_dump = exports.tables_to_dump(config, prefix_matches)
@@ -101,9 +108,10 @@ exports.init = (grunt) ->
     # Remove new lines/return chars
     prefix_matches = prefix_matches.replace(/(\r\n|\n|\r)/g, "")
     
-    # console.log prefix_matches
+    if prefix_matches.length is 0
+      return []
 
-    prefix_matches.split " "
+    return prefix_matches.split " "
 
   
   # Return Array of tables to dump
@@ -284,10 +292,11 @@ exports.init = (grunt) ->
   #  - Replace existing ACF field keys in options table
   #  - Delete existing extras_regular_prices and insert new ones
   #
-  exports.pd_tools_adapt = ( migrated_backup_paths, target_backup_paths, search_options, replace_options, grunt ) ->
+  exports.pd_tools_adapt = ( migrated_backup_paths, target_backup_paths, search_options, replace_options, grunt, callback ) ->
 
-    #####################################
-    ###### START DB Adapt #########
+    grunt.log.subhead "Running PD Tools Adapt"
+
+    ###### START Modified db_adapt function #########
 
     file = target_backup_paths.file
 
@@ -310,34 +319,42 @@ exports.init = (grunt) ->
       grunt.log.ok "Swap out old table prefix for new table prefix [ old: " + old_prefix + " | new: " + new_prefix + " ]..."
       # output = exports.replace_table_prefix( old_prefix, new_prefix, output )
 
-    output = "-- Database Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output
+    output = "-- URLs Adapted via grunt-wordpress-deploy on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n\n" + output
 
     # Save to 
-    grunt.file.write migrated_backup_paths.file, output
+    grunt.file.write file, output
 
     grunt.log.subhead 'Target DB URLs replaced with local URLs...'
 
-    # grunt.fail.fatal('suckit')
+    ###### END Modified db_adapt function #########
 
     # Set src and dest
-    src = [ migrated_backup_paths.file ]
+    src = target_backup_paths.file
     dest = migrated_backup_paths.file
+
+    # Append small banner
+    banner = "-- Database Adapted via grunt-wordpress-deploy + grunt-text-replace on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n--\n\n"
+    grunt.file.write( dest, banner + grunt.file.read( src ) )
 
     # Set src and dest in global options array to be used in task
     grunt.option 'migrate_src', src
     grunt.option 'migrate_dest', dest
     # grunt.option 'migrate_replacements', replacements
 
-    # Run the task
-    grunt.task.run "pd_replace"
+    grunt.option 'migrate_src_table_prefix', old_prefix
+    grunt.option 'migrate_dest_table_prefix', new_prefix
 
-    # Append small banner
-    banner = "-- Database Adapted via grunt-wordpress-deploy + grunt-text-replace on " + grunt.template.today('yyyy-mm-dd "at" HH:MM::ss') + "\n--\n\n"
-    grunt.file.write( src, banner + grunt.file.read( src ) )
+    # Run the task
+    grunt.task.run "replace:pd_migrate"
+    # grunt.task.run "pd_replace"
 
     grunt.log.subhead 'PD Replace tasks finished'
-      
-    return
+
+    if callback? and typeof callback isnt "function" then return callback()
+
+  exports.acf_import = () ->
+    cmd = 'wp acf import all'
+    shell.exec(cmd, silent: true ).output
 
   exports.replace_urls = (search, replace, content) ->
     content = exports.replace_urls_in_serialized(search, replace, content)
