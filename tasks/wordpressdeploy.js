@@ -205,7 +205,7 @@ module.exports = function(grunt) {
 
     grunt.task.run('acf_import');
 
-    grunt.task.run('convert_pd_data');
+    // grunt.task.run('convert_pd_data'); // Need to figure out how to require plugins from within wp cli
 
   });
 
