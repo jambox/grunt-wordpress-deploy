@@ -295,13 +295,6 @@
         return callback();
       }
     };
-    exports.acf_import = function() {
-      var cmd;
-      cmd = 'wp acf import all';
-      return shell.exec(cmd, {
-        silent: true
-      }).output;
-    };
     exports.replace_urls = function(search, replace, content) {
       content = exports.replace_urls_in_serialized(search, replace, content);
       grunt.log.ok('Replaced URLs in serialized data');

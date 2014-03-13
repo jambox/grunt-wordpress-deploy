@@ -354,10 +354,6 @@ exports.init = (grunt) ->
 
     if callback? and typeof callback isnt "function" then return callback()
 
-  exports.acf_import = () ->
-    cmd = 'wp acf import all'
-    shell.exec(cmd, silent: true ).output
-
   exports.replace_urls = (search, replace, content) ->
     content = exports.replace_urls_in_serialized(search, replace, content)
     grunt.log.ok 'Replaced URLs in serialized data'

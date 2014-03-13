@@ -10,6 +10,7 @@
 
 var grunt = require('grunt');
 var util  = require('../tasks/lib/util.js').init(grunt);
+var pizza_util  = require('../tasks/lib/pd-util.js').init(grunt);
 
 module.exports = function(grunt) {
 
@@ -204,6 +205,8 @@ module.exports = function(grunt) {
 
     grunt.task.run('acf_import');
 
+    grunt.task.run('convert_pd_data');
+
   });
 
   grunt.registerTask("import_db", "Import migrated db into local db.", function () {
@@ -232,8 +235,16 @@ module.exports = function(grunt) {
   grunt.registerTask("acf_import", "Import all ACFs using acf-wp-cli.", function () {
 
     grunt.log.subhead("Importing all ACFs");
-    util.acf_import();
+    pizza_util.acf_import();
     grunt.log.ok();
+
+  });
+
+  grunt.registerTask("convert_pd_data", "Convert PD Tools OG data to the new jams.", function () {
+
+    grunt.log.subhead("Converting Data");
+    pizza_util.convert_data();
+    grunt.log.oklns('Data conversion complete');
 
   });
 
