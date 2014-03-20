@@ -89,7 +89,7 @@ module.exports = function(grunt) {
     util.db_dump(local_options, local_backup_paths);
 
     // Import dump into Local
-    // util.db_import(local_options,target_backup_paths.file);
+    util.db_import(local_options,dest_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
   });
@@ -113,11 +113,14 @@ module.exports = function(grunt) {
     var rsync_args = util.compose_rsync_options(task_options.rsync_args);
     var exclusions = util.compose_rsync_exclusions(task_options.exclusions);
 
+    var local_path = util.get_path( local_options, grunt );
+    var target_path = util.get_path( target_options, grunt );
+
     var config = {
       rsync_args: task_options.rsync_args.join(' '),
       ssh_host: target_options.ssh_host,
-      from: local_options.path,
-      to: target_options.path,
+      from: local_path,
+      to: target_path,
       exclusions: exclusions
     };
 
@@ -143,11 +146,14 @@ module.exports = function(grunt) {
     var rsync_args = util.compose_rsync_options(task_options.rsync_args);
     var exclusions = util.compose_rsync_exclusions(task_options.exclusions);
 
+    var local_path = util.get_path( local_options, grunt );
+    var target_path = util.get_path( target_options, grunt );
+
     var config = {
       rsync_args: rsync_args,
       ssh_host: target_options.ssh_host,
-      from: target_options.path,
-      to: local_options.path,
+      from: target_path,
+      to: local_path,
       exclusions: exclusions
     };
 

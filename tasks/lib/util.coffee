@@ -460,6 +460,22 @@ exports.init = (grunt) ->
     )
     cmd
 
+  exports.get_path = ( options, grunt ) ->
+    invalid_path_error = "Invalid path provided from '#{options.title}'."
+    # If the path has multiple keys (is an object)
+    if typeof options.path is "object"
+      unless grunt.option("path-key") # If the path is an object but there's no specified key
+        grunt.fail.warn "#{invalid_path_error} Either change the config so 'path:' is a path String, or specify a valid path key using the '--path-key' flag."
+      else
+        path_string = options.path[grunt.option("path-key")]
+    else if typeof options.path is "string" # If the path is a string
+      # Set the path to either the --path-key || options.path
+      path_string = options.path
+    else
+      grunt.fail.warn "#{invalid_path_error} Check your configuration and provide a valid path."
+    
+    path_string
+
   tpls =
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"
     mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>"

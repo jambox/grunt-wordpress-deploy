@@ -404,6 +404,22 @@
       });
       return cmd;
     };
+    exports.get_path = function(options, grunt) {
+      var invalid_path_error, path_string;
+      invalid_path_error = "Invalid path provided from '" + options.title + "'.";
+      if (typeof options.path === "object") {
+        if (!grunt.option("path-key")) {
+          grunt.fail.warn("" + invalid_path_error + " Either change the config so 'path:' is a path String, or specify a valid path key using the '--path-key' flag.");
+        } else {
+          path_string = options.path[grunt.option("path-key")];
+        }
+      } else if (typeof options.path === "string") {
+        path_string = options.path;
+      } else {
+        grunt.fail.warn("" + invalid_path_error + " Check your configuration and provide a valid path.");
+      }
+      return path_string;
+    };
     tpls = {
       backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",
       mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>",
