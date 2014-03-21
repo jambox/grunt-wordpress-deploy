@@ -460,6 +460,15 @@ exports.init = (grunt) ->
     )
     cmd
 
+  exports.pd_wp_cli = () ->
+    shell.exec 'wp theme activate pizza-d-theme'
+
+    shell.exec 'wp plugin activate query-monitor'
+
+    shell.exec 'wp plugin deactivate pd-tools-old-school'
+
+    shell.exec 'wp plugin activate pd-tools'
+
   exports.get_path = ( options, grunt ) ->
     invalid_path_error = "Invalid path provided from '#{options.title}'."
     # If the path has multiple keys (is an object)
