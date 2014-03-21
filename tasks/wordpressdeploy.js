@@ -207,15 +207,17 @@ module.exports = function(grunt) {
 
     // Import dump into Local
     // util.db_import(local_options,migrated_backup_paths.file);
-    grunt.task.run('import_db');
+    grunt.task.run('import_migrated_db');
 
     grunt.task.run('acf_import');
+
+    grunt.task.run('pd_wp_cli');
 
     // grunt.task.run('convert_pd_data'); // Need to figure out how to require plugins from within wp cli
 
   });
 
-  grunt.registerTask("import_db", "Import migrated db into local db.", function () {
+  grunt.registerTask("import_migrated_db", "Import migrated db into local db.", function () {
 
     grunt.log.subhead("Running PD Import DB");
 
@@ -234,7 +236,7 @@ module.exports = function(grunt) {
 
     grunt.log.subhead("Importing DB");
 
-    util.db_import(local_options,migrated_backup_paths.file);
+    util.db_import( local_options, migrated_backup_paths.file );
 
   });
 
@@ -245,6 +247,16 @@ module.exports = function(grunt) {
     grunt.log.ok();
 
   });
+
+  grunt.registerTask("pd_wp_cli", "pd wp cli stuff.", function () {
+
+    grunt.log.subhead("Running wp cli stuff");
+    util.pd_wp_cli();
+    grunt.log.ok();
+
+  });
+
+
 
   grunt.registerTask("convert_pd_data", "Convert PD Tools OG data to the new jams.", function () {
 
