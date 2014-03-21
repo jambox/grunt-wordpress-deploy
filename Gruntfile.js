@@ -56,7 +56,8 @@ module.exports = function(grunt) {
     coffee: {
       compile: {
         files: {
-          'tasks/lib/util.js': 'tasks/lib/util.coffee', // 1:1 compile
+          'tasks/lib/util.js': 'tasks/lib/util.coffee',
+          'tasks/lib/pd-util.js': 'tasks/lib/pd-util.coffee'
         }
       },
     },
@@ -91,4 +92,8 @@ module.exports = function(grunt) {
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);
+
+
+
+  
 };
