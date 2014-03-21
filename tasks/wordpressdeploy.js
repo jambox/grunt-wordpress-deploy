@@ -251,7 +251,7 @@ module.exports = function(grunt) {
   grunt.registerTask("pd_wp_cli", "pd wp cli stuff.", function () {
 
     grunt.log.subhead("Running wp cli stuff");
-    util.pd_wp_cli();
+    pizza_util.pd_wp_cli();
     grunt.log.ok();
 
   });

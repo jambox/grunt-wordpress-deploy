@@ -18,7 +18,14 @@
         silent: true
       }).output);
     };
-    return exports;
+    return exports.pd_wp_cli = function() {
+      shell.exec('wp theme activate pizza-d-theme');
+      shell.exec('wp plugin activate query-monitor');
+      shell.exec('wp plugin deactivate pd-tools-old-school');
+      return shell.exec('wp plugin activate pd-tools');
+    };
   };
+
+  exports;
 
 }).call(this);
