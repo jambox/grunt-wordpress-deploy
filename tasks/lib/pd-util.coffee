@@ -12,4 +12,11 @@ exports.convert_data = () ->
   cmd = 'wp eval-file core/conversion-script.php'
   console.log shell.exec(cmd, silent: true ).output
 
+exports.pd_wp_cli = () ->
+  cmd = 'wp theme deactive pizzad-theme'
+  shell.exec(cmd, silent: true )
+
+  cmd = 'wp theme activate pizza-d-theme'
+  shell.exec(cmd, silent: true )
+
 exports
