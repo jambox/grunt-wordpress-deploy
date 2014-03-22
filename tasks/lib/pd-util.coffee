@@ -15,10 +15,8 @@ exports.init = (grunt) ->
   exports.pd_wp_cli = ->
     shell.exec 'wp theme activate pizza-d-theme'
 
-    shell.exec 'wp plugin activate query-monitor'
+    shell.exec 'wp plugin deactivate pd-tools-old-school adminimize gd-taxonomies-tools'
 
-    shell.exec 'wp plugin deactivate pd-tools-old-school'
+    shell.exec 'wp plugin activate query-monitor pd-tools'
 
-    shell.exec 'wp plugin activate pd-tools'
-
-exports
+  exports
