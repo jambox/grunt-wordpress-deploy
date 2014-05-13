@@ -47,21 +47,37 @@ module.exports = function(grunt) {
       local: {
         "title": "local",
         "database": "database_name",
+        table_prefix: "client_wordpress_",
+        table_exclusions : [
+          "_wf" # Will exclude with MySQL " NOT LIKE '%_wf%' " statement
+        ],
         "user": "database_username",
         "pass": "database_password",
         "host": "database_host",
         "url": "http://local_url",
-        "path": "/local_path"
+        "path": {
+          "theme": "/Applications/MAMP/htdocs/client-site.com/wp-content/themes/client_name-theme/",
+          "plugin": "/Applications/MAMP/htdocs/client-site.com/wp-content/plugins/client_name-plugin/",
+          "uploads": "/Applications/MAMP/htdocs/client-site.com/wp-content/uploads/"
+        }
       },
-      staging: {
-        "title": "staging",
+      client_host: {
+        "title": "client_host",
         "database": "database_name",
+        "table_prefix": "client_name_db_",
+        "table_exclusions" : [
+          "_wf" # Will exclude with " NOT LIKE '%_wf%' " statement
+        ],
         "user": "database_username",
         "pass": "database_password",
         "host": "database_host",
-        "url": "http://staging_url",
-        "path": "/staging_path",
-        "ssh_host": "user@staging_host"
+        "url": "http://client-site.com",
+        path: {
+          "theme": "/home/client_name/client-site.com/wp-content/themes/client_name-theme/",
+          "plugin": "/home/client_name/client-site.com/wp-content/plugins/client_name-plugin/",
+          "uploads": "/home/client_name/client-site.com/wp-content/uploads/"
+        }
+        "ssh_host": "user@client_host"
       },
       your_environment: {
         ...
