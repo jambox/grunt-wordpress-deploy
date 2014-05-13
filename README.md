@@ -103,8 +103,8 @@ The plugin defines a serie of tasks. Here's a brief overview:
 
 * `grunt push_db --target=environment_name`: Push the local database to the specified environment.
 * `grunt pull_db --target=environment_name`: Pull the database on the specified environment into the local environment.
-* `grunt push_files --target=environment_name`: Push the local files to the specified environment, using rsync.
-* `grunt pull_files --target=environment_name`: Pull the files from the specified environment to the local environment, using rsync.
+* `grunt push_files --target=environment_name --path-key=specified_path`: Push the local files to the specified environment, using rsync. The `path-key` should be specified as a key in the `path` object in your grunt task config.
+* `grunt pull_files --target=environment_name --path-key=specified_path`: Pull the files from the specified environment to the local environment, using rsync.The `path-key` should be specified as a key in the `path` object in your grunt task config.
 
 ### Push_db
 
@@ -131,7 +131,7 @@ The `pull_db` command moves your target environment database to the local databa
 
 ### Push_files
 
-Example execution: `grunt push_files --target=staging`
+Example execution: `grunt push_files --target=staging --path-key=theme`
 
 The `push_files` command moves your local environment files to the target environment using rsync.
 
@@ -154,7 +154,7 @@ More details in the configuration section below.
 
 ### Pull_files
 
-Example execution: `grunt pull_files --target=staging`
+Example execution: `grunt pull_files --target=staging --path-key=uploads`
 
 The `pull_files` command moves your target environment files to the local environment using rsync.
 
