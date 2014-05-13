@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         "database" : "database_name",
         "table_prefix" : "client_name_db_",
         "table_exclusions" : [
-          "_wf" # Will exclude with " NOT LIKE '%_wf%' " statement
+          "_wf" // Will exclude with " NOT LIKE '%_wf%' " statement
         ],
         "user" : "database_username",
         "pass" : "database_password",
