@@ -177,6 +177,16 @@ Type: `String`
 
 Description: the name of the database for this target.
 
+#### table_prefix
+Type: `String`
+
+Description: The WordPress table prefix being used by this site. If you're using a single table to run multiple WP sites, this option will ensure only a single site's data is being pushed, pulled and/or backed up.
+
+#### table_exclusions
+Type: `Array`
+
+Description : Sometimes WordPress plugins used for cacheing and/or analytics create additional tables in the db. If you do not want the `mysqldump` to target these tables, exclude theme here. (_See config example above for usage._)
+
 #### user
 Type: `String`
 
@@ -198,9 +208,11 @@ Type: `String`
 Description: the string to search and replace within the database before it is moved to the target location. This is designed for use with the awful Wordpress implementation which stores  [the site url into the database](http://codex.wordpress.org/Changing_The_Site_URL) and is required to be updated upon migration to a new environment.
 
 #### path
-Type: `String`
+Type: `Array`
 
-Description: the path of the the installation files on the filesystem. Used by rsync to update the correct folder on synchronization.
+Description: An array of pairs to specify which path in the file structure rsync should target. Used by rsync to update the correct folder on synchronization.
+
+_NOTE_: Each environment in the `Gruntfile` should have matching path keys. For example, if you specify a `theme` path for your local environment, make sure you have a `theme` path for your `staging` and `client_host` environments too.
 
 #### ssh_host
 Type: `String`
