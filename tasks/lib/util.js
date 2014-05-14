@@ -158,6 +158,7 @@
       tables_to_dump = shell.exec(cmd, {
         silent: true
       }).output.replace(/(\r\n|\n|\r)/g, "");
+      tables_to_dump = tables_to_dump.replace('stdin: is not a tty', '');
       return tables_to_dump.split(" ");
     };
     exports.build_prefixed_sqldump = function(config, tables_to_dump) {

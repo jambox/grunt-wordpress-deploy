@@ -186,6 +186,8 @@ exports.init = (grunt) ->
 
     # console.log "tables_to_dump\n" + tables_to_dump
 
+    tables_to_dump = tables_to_dump.replace('stdin: is not a tty', '')
+
     tables_to_dump.split " "
 
   
