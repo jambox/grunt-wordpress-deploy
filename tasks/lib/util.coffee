@@ -337,6 +337,7 @@ exports.init = (grunt) ->
         pass: config.pass
         database: config.database
         host: config.host
+        port: config.port || 3306
     )
     if typeof config.ssh_host is "undefined"
       # grunt.log.oklns "Building dump cmd for LOCAL database [" + config.database + "]"
@@ -415,7 +416,7 @@ exports.init = (grunt) ->
 
   tpls =
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"
-    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>"
+    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %> --port <%= port %>"
     mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>"
     sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password=<%= pass %>"
     rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>"

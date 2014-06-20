@@ -301,7 +301,8 @@
           user: config.user,
           pass: config.pass,
           database: config.database,
-          host: config.host
+          host: config.host,
+          port: config.port || 3306
         }
       });
       if (typeof config.ssh_host === "undefined") {
@@ -393,7 +394,7 @@
     };
     tpls = {
       backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",
-      mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %>",
+      mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %> --port <%= port %>",
       mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>",
       sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password=<%= pass %>",
       rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>",
