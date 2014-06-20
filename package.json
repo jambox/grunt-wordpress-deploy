@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:jambox/grunt-wordpress-deploy.git#remove-client-utils"
+    "url": "git@github.com:jambox/grunt-wordpress-deploy.git"
   },
   "bugs": {
     "url": "https://github.com/jambox/grunt-wordpress-deploy/issues"
