@@ -179,7 +179,7 @@ module.exports = {
     var task_options = {
       backups_dir: 'backups_dir'
     };
-    var today = grunt.template.today('yyyymmdd');
+    var today = grunt.template.today('yyyy-mm-dd');
     var now = grunt.template.today('HH-MM-ss');
 
     var actual = util.generate_backup_paths(target, task_options);
