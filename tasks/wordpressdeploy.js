@@ -165,5 +165,6 @@ module.exports = function(grunt) {
     util.acf_import();
     grunt.log.ok();
 
+  });
 
 };
