@@ -7,6 +7,8 @@ exports.init = (grunt) ->
 
   exports.db_dump = (config, output_paths) ->
 
+    exports.check_for_mysql(config)
+
     grunt.file.mkdir output_paths.dir
 
     if config.table_prefix
@@ -413,6 +415,12 @@ exports.init = (grunt) ->
   exports.acf_import = ->
     cmd = 'wp acf import all'
     shell.exec(cmd, silent: true )
+
+  exports.check_for_mysql = (grunt) ->
+    which_mysql = shell.which('mysql')
+
+    if !shell.which('mysql')
+      grunt.fail.fatal 'Error: Local MySQL not found! Check your $PATH config to make sure shell can find a MySQL executable...'
 
   tpls =
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"

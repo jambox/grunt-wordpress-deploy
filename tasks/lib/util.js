@@ -7,6 +7,7 @@
     exports = {};
     exports.db_dump = function(config, output_paths) {
       var cmd, output;
+      exports.check_for_mysql(config);
       grunt.file.mkdir(output_paths.dir);
       if (config.table_prefix) {
         cmd = exports.prefixed_mysqldump_cmd(config);
@@ -391,6 +392,13 @@
       return shell.exec(cmd, {
         silent: true
       });
+    };
+    exports.check_for_mysql = function(grunt) {
+      var which_mysql;
+      which_mysql = shell.which('mysql');
+      if (!shell.which('mysql')) {
+        return grunt.fail.fatal('Error: Local MySQL not found! Check your $PATH config to make sure shell can find a MySQL executable...');
+      }
     };
     tpls = {
       backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>",

@@ -38,6 +38,8 @@ module.exports = function(grunt) {
 
     grunt.log.subhead("Pushing database from 'Local' to '" + target_options.title + "'");
 
+    util.check_for_mysql(grunt);
+
     // Dump local DB
     util.db_dump(local_options, local_backup_paths);
 
@@ -77,6 +79,9 @@ module.exports = function(grunt) {
 
     // Start execution
     grunt.log.subhead("Pulling database from '" + target_options.title + "' into Local");
+
+
+    util.check_for_mysql(grunt);
 
     // Dump Target DB
     util.db_dump(target_options, target_backup_paths );
