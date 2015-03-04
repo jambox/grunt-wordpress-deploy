@@ -56,8 +56,7 @@ module.exports = function(grunt) {
     coffee: {
       compile: {
         files: {
-          'tasks/lib/util.js': 'tasks/lib/util.coffee',
-          'tasks/lib/pd-util.js': 'tasks/lib/pd-util.coffee'
+          'tasks/lib/util.js': 'tasks/lib/util.coffee'
         }
       },
     },
