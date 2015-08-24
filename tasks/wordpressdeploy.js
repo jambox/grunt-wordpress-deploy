@@ -188,6 +188,13 @@ module.exports = function(grunt) {
     grunt.task.run("push_files");
   });
 
+  // Push Local Plugin - Single Plugin folder. used for plugin developmen
+  // ( Shortcut for push_files --path-key=plugin )
+  grunt.registerTask("push_plugin", "Push single plugin folder to a remote host with rsync.", function () {
+    grunt.option('path-key', 'plugin');
+    grunt.task.run("push_files");
+  });
+
   // Pull Remote Uplaods ( Shortcut for pull_files --path-key=uploads )
   grunt.registerTask("pull_uploads", "Pull uploaded files from a remote host with rsync.", function () {
     grunt.option('path-key', 'uploads');
