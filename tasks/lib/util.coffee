@@ -371,7 +371,7 @@ exports.init = (grunt) ->
           host: config.ssh_host
       )
       grunt.log.oklns "Importing DUMP into remote database"
-      cmd = tpl_ssh + " '" + cmd + "' < " + src
+      cmd = tpl_ssh + " \"" + cmd + "\" < " + src
     cmd
 
   exports.rsync_push_cmd = (config) ->
@@ -424,9 +424,9 @@ exports.init = (grunt) ->
 
   tpls =
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"
-    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p<%= pass %> <%= database %> --port <%= port %>"
-    mysql: "mysql -h <%= host %> -u <%= user %> -p<%= pass %> <%= database %>"
-    sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password=<%= pass %>"
+    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p'<%= pass %>' <%= database %> --port <%= port %>"
+    mysql: "mysql -h <%= host %> -u <%= user %> -p'<%= pass %>' <%= database %>"
+    sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password='<%= pass %>'"
     rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>"
     rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>"
     ssh: "ssh <%= host %>"
