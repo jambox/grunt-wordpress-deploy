@@ -41,15 +41,19 @@ module.exports = function(grunt) {
     util.check_for_mysql(grunt);
 
     // Dump local DB
+    grunt.log.subhead("Dumping Local DB:");
     util.db_dump(local_options, local_backup_paths);
 
     // Search and Replace database refs
+    grunt.log.subhead("Adapting:");
     util.db_adapt(local_options, target_options, local_backup_paths.file, dest_backup_paths.file);
 
     // Dump target DB
+    grunt.log.subhead("Dumping Target DB (" + target_options.title + "):");
     util.db_dump(target_options, target_backup_paths);
 
     // Import dump to target DB
+    grunt.log.subhead("Importing to Target DB (" + target_options.title + "):");
     util.db_import(target_options, dest_backup_paths.file);
 
     grunt.log.subhead("Operations completed");
