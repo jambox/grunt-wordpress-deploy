@@ -101,14 +101,14 @@ In the example above we define two environments, one is mandatory and is always 
 
 The plugin defines a serie of tasks. Here's a brief overview:
 
-* `grunt push_db --target=environment_name`: Push the local database to the specified environment.
+* `grunt push_db --target=environment_name [--sql-src=PATH_TO_SQL_DUMP]`: Push the local database to the specified environment.
 * `grunt pull_db --target=environment_name`: Pull the database on the specified environment into the local environment.
 * `grunt push_files --target=environment_name --path-key=specified_path`: Push the local files to the specified environment, using rsync. The `path-key` should be specified as a key in the `path` object in your grunt task config.
 * `grunt pull_files --target=environment_name --path-key=specified_path`: Pull the files from the specified environment to the local environment, using rsync.The `path-key` should be specified as a key in the `path` object in your grunt task config.
 
 ### Push_db
 
-Example execution: `grunt push_db --target=staging`
+Example execution: `grunt push_db --target=staging --sql-src=backups/wp-migratedb/manual-sql-dump.sql`
 
 The `push_db` command moves your local database to a remote database location, specified by the target environment. What happens under the hood is the following:
 
@@ -116,6 +116,7 @@ The `push_db` command moves your local database to a remote database location, s
 - Adapt the local dump to the remote environment executing a search and replace to change the instances of the local domain with the instances of the remote domain, taking care of serialized data
 - Backups the database on the target environment
 - Imports the local adapted dump into the remote database
+- If you specify the `--sql-src` flag, the remote DB will import that file
 
 
 ### Pull_db

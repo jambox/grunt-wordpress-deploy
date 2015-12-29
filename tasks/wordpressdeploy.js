@@ -40,6 +40,11 @@ module.exports = function(grunt) {
 
     util.check_for_mysql(grunt);
 
+    // Check to see if manual sql source is set and validate file
+    if( util.validate_sql_src_file(grunt) ) {
+      dest_backup_paths.file = grunt.option('sql-src')
+    }
+
     // Dump local DB
     grunt.log.subhead("Dumping Local DB:");
     util.db_dump(local_options, local_backup_paths);

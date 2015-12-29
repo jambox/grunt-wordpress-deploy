@@ -319,8 +319,8 @@
       return cmd;
     };
     exports.mysql_cmd = function(config, src) {
-      var cmd, tpl_ssh;
-      cmd = grunt.template.process(tpls.mysql, {
+      var cmd, mysql_tpl, ssh_tpl;
+      mysql_tpl = grunt.template.process(tpls.mysql, {
         data: {
           host: config.host,
           user: config.user,
@@ -331,16 +331,16 @@
       });
       if (typeof config.ssh_host === "undefined") {
         grunt.log.oklns("Importing DUMP into local database");
-        cmd = cmd + " < " + src;
-        console.log(cmd);
+        cmd = mysql_tpl + " < " + src;
+        console.log(mysql_tpl);
       } else {
-        tpl_ssh = grunt.template.process(tpls.ssh, {
+        ssh_tpl = grunt.template.process(tpls.ssh, {
           data: {
             host: config.ssh_host
           }
         });
         grunt.log.oklns("Importing DUMP into remote database");
-        cmd = tpl_ssh + " \"" + cmd + "\" < " + src;
+        cmd = ssh_tpl + " \"" + mysql_tpl + "\" < " + src;
       }
       return cmd;
     };
@@ -398,6 +398,18 @@
       which_mysql = shell.which('mysql');
       if (!shell.which('mysql')) {
         return grunt.fail.fatal('Error: Local MySQL not found! Check your $PATH config to make sure shell can find a MySQL executable...');
+      }
+    };
+    exports.validate_sql_src_file = function(grunt) {
+      var cli_sql_src;
+      if (!grunt.option('sql-src')) {
+        return false;
+      }
+      cli_sql_src = grunt.option('sql-src');
+      if (grunt.file.exists(cli_sql_src)) {
+        return grunt.log.oklns('Setting sql src file : ' + cli_sql_src);
+      } else {
+        return grunt.fail.warn('Manual sql src file not found : ' + cli_sql_src + '. Check the filename spelling and confirm it exists.');
       }
     };
     tpls = {
