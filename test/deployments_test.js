@@ -107,12 +107,12 @@ module.exports = {
     };
 
     var cmd1 = util.mysqldump_cmd(config);
-    test.equal(cmd1, "mysqldump -h localhost -ujohn -ppass test --port 3306", 'Local mysqldump command.');
+    test.equal(cmd1, "mysqldump -h localhost -ujohn -p\'pass\' test --port 3306", 'Local mysqldump command.');
 
     config.ssh_host = '127.0.0.1';
 
     var cmd2 = util.mysqldump_cmd(config);
-    test.equal(cmd2, "ssh 127.0.0.1 'mysqldump -h localhost -ujohn -ppass test --port 3306'", 'SSH remote mysqldump command.');
+    test.equal(cmd2, "ssh 127.0.0.1 'mysqldump -h localhost -ujohn -p\'pass\' test --port 3306'", 'SSH remote mysqldump command.');
     test.done();
   },
 
@@ -129,12 +129,12 @@ module.exports = {
     var src = '/aaa/bbb';
 
     var cmd1 = util.mysql_cmd(config, src);
-    test.equal(cmd1, "mysql -h localhost -u john -ppass test < /aaa/bbb", 'Local Mysql import command.');
+    test.equal(cmd1, "mysql -h localhost -u john -p\'pass\' test < /aaa/bbb", 'Local Mysql import command.');
 
     config.ssh_host = '127.0.0.1';
 
     var cmd2 = util.mysql_cmd(config, src);
-    test.equal(cmd2, "ssh 127.0.0.1 'mysql -h localhost -u john -ppass test' < /aaa/bbb", 'Remote Mysql import command.');
+    test.equal(cmd2, "ssh 127.0.0.1 \"mysql -h localhost -u john -p\'pass\' test\" < /aaa/bbb", 'Remote Mysql import command.');
     test.done();
   },
 
