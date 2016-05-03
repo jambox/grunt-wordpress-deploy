@@ -5,7 +5,6 @@
     shell = require("shelljs");
     lineReader = require("line-reader");
     replace = require("replace");
-    replaceInFile = require("replace-in-file");
     exports = {};
     exports.db_dump = function(config, output_paths) {
       var cmd, output;
