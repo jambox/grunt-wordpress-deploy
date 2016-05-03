@@ -1,7 +1,7 @@
 (function() {
   "use strict";
   exports.init = function(grunt) {
-    var exports, lineReader, replace, replaceInFile, shell, tpls;
+    var exports, lineReader, replace, shell, tpls;
     shell = require("shelljs");
     lineReader = require("line-reader");
     replace = require("replace");
@@ -264,7 +264,6 @@
       }
       grunt.file.write(dest_file, output);
       exports.remove_strings_from_sql(search_options, replace_options, dest_file, output);
-      grunt.fail.fatal('you dead');
     };
     exports.replace_urls = function(search, replace, content) {
       content = exports.replace_urls_in_serialized(search, replace, content);
