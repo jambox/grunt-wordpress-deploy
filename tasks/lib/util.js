@@ -161,6 +161,7 @@
         silent: true
       }).output.replace(/(\r\n|\n|\r)/g, "");
       tables_to_dump = tables_to_dump.replace('stdin: is not a tty', '');
+      tables_to_dump = tables_to_dump.replace('Warning: Using a password on the command line interface can be insecure.', '');
       return tables_to_dump.split(" ");
     };
     exports.build_prefixed_sqldump = function(config, tables_to_dump) {

@@ -106,6 +106,8 @@ exports.init = (grunt) ->
     # Fix : On the destination server, edit /etc/bashrc file and comment out the "mesg y" line.
     # http://www.linux.org/threads/stdin-is-not-a-tty.16/?codekitCB=415084070.551448
     prefix_matches = prefix_matches.replace(/stdin: is not a tty/g, "")
+
+    # Also remove MySQL command line warning (found on SiteGround servers)
     prefix_matches = prefix_matches.replace(/Warning: Using a password on the command line interface can be insecure./g, "")
 
     # Remove new lines/return chars
@@ -190,6 +192,7 @@ exports.init = (grunt) ->
     # console.log "tables_to_dump\n" + tables_to_dump
 
     tables_to_dump = tables_to_dump.replace('stdin: is not a tty', '')
+    tables_to_dump = tables_to_dump.replace('Warning: Using a password on the command line interface can be insecure.', '')
 
     tables_to_dump.split " "
 
