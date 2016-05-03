@@ -106,6 +106,7 @@ exports.init = (grunt) ->
     # Fix : On the destination server, edit /etc/bashrc file and comment out the "mesg y" line.
     # http://www.linux.org/threads/stdin-is-not-a-tty.16/?codekitCB=415084070.551448
     prefix_matches = prefix_matches.replace(/stdin: is not a tty/g, "")
+    prefix_matches = prefix_matches.replace(/Warning: Using a password on the command line interface can be insecure./g, "")
 
     # Remove new lines/return chars
     prefix_matches = prefix_matches.replace(/(\r\n|\n|\r)/g, "")

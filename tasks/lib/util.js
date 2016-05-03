@@ -83,6 +83,7 @@
         silent: true
       }).output;
       prefix_matches = prefix_matches.replace(/stdin: is not a tty/g, "");
+      prefix_matches = prefix_matches.replace(/Warning: Using a password on the command line interface can be insecure./g, "");
       prefix_matches = prefix_matches.replace(/(\r\n|\n|\r)/g, "");
       if (prefix_matches.length === 0) {
         return [];
