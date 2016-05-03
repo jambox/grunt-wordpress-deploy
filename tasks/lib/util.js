@@ -1,9 +1,11 @@
 (function() {
   "use strict";
   exports.init = function(grunt) {
-    var exports, lineReader, shell, tpls;
+    var exports, lineReader, replace, replaceInFile, shell, tpls;
     shell = require("shelljs");
     lineReader = require("line-reader");
+    replace = require("replace");
+    replaceInFile = require("replace-in-file");
     exports = {};
     exports.db_dump = function(config, output_paths) {
       var cmd, output;
@@ -238,17 +240,18 @@
       return exclusions;
     };
     exports.db_adapt = function(search_options, replace_options, src_file, dest_file) {
-      var content, new_prefix, new_url, old_prefix, old_url, output;
+      var new_prefix, new_url, old_prefix, old_url, output, sqldump_output;
+      sqldump_output = grunt.file.read(src_file);
+      output = sqldump_output;
       old_url = search_options.url;
       new_url = replace_options.url;
-      content = grunt.file.read(src_file);
       grunt.log.oklns("Set the correct urls for the destination in the database...");
       console.log({
         old_url: old_url,
         new_url: new_url
       });
       grunt.writeln;
-      output = exports.replace_urls(old_url, new_url, content);
+      output = exports.replace_urls(old_url, new_url, output);
       old_prefix = search_options.table_prefix;
       new_prefix = replace_options.table_prefix;
       grunt.log.oklns("New prefix:" + new_prefix + " / Old prefix:" + old_prefix);
@@ -261,6 +264,8 @@
         dest_file = src_file;
       }
       grunt.file.write(dest_file, output);
+      exports.remove_strings_from_sql(search_options, replace_options, dest_file, output);
+      grunt.fail.fatal('you dead');
     };
     exports.replace_urls = function(search, replace, content) {
       content = exports.replace_urls_in_serialized(search, replace, content);
@@ -296,6 +301,40 @@
       var regexp;
       regexp = new RegExp("(?!" + replace + ")(" + search + ")", "g");
       return string.replace(regexp, replace);
+    };
+    exports.remove_strings_from_sql = function(search_options, replace_options, dest_file, sqldump) {
+      var file_to_run_replace_on, i, replaced_sql, _i, _j, _len, _len1, _ref, _ref1;
+      file_to_run_replace_on = dest_file + '.tmp';
+      grunt.file.write(file_to_run_replace_on, sqldump);
+      if (typeof search_options.sql_remove === "object" && search_options.sql_remove.length > 0) {
+        grunt.log.oklns("Removing strings from sql dump...");
+        _ref = search_options.sql_remove;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          i = _ref[_i];
+          console.log("'" + i + "'");
+          replace({
+            regex: i,
+            replacement: '',
+            paths: [file_to_run_replace_on]
+          });
+        }
+      }
+      if (typeof replace_options.sql_remove === "object" && replace_options.sql_remove.length > 0) {
+        grunt.log.oklns("Removing strings from sql dump...");
+        _ref1 = replace_options.sql_remove;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          i = _ref1[_j];
+          console.log("'" + i + "'");
+          replace({
+            regex: i,
+            replacement: '',
+            paths: [file_to_run_replace_on]
+          });
+        }
+      }
+      replaced_sql = grunt.file.read(file_to_run_replace_on);
+      grunt.file.write(dest_file, replaced_sql);
+      return grunt.file["delete"](file_to_run_replace_on);
     };
     exports.mysqldump_cmd = function(config) {
       var cmd, tpl_ssh;
