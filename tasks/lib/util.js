@@ -201,6 +201,7 @@
       var cmd;
       grunt.log.oklns("Syncing data from '" + config.from + "' to '" + config.to + "' with rsync.");
       cmd = exports.rsync_pull_cmd(config);
+      grunt.log.writeln(cmd);
       shell.exec(cmd);
       grunt.log.oklns("Sync completed successfully.");
     };
