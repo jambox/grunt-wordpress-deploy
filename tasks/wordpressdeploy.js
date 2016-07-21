@@ -173,44 +173,44 @@ module.exports = function(grunt) {
     util.rsync_pull(config);
   });
 
-  // Pull Remote Theme Files ( Shortcut for pull_files --path-key=theme )
-  grunt.registerTask("pull_theme", "Pull theme files from a remote host with rsync.", function () {
+  // Pull Specified Theme Files from remote host ( Shortcut for pull_files --path-key=theme )
+  grunt.registerTask("pull_theme", "Pull Specified Theme Files from remote host with rsync.", function () {
     grunt.option('path-key', 'theme');
     grunt.task.run("pull_files");
   });
 
-  // Push Remote Theme Files ( Shortcut for push_files --path-key=theme )
-  grunt.registerTask("push_theme", "Push theme files to a remote host with rsync.", function () {
+  // Push Specified Theme Files to remote host ( Shortcut for push_files --path-key=theme )
+  grunt.registerTask("push_theme", "Push Specified Theme Files to remote host with rsync.", function () {
     grunt.option('path-key', 'theme');
     grunt.task.run("push_files");
   });
 
-  // Pull Remote Plugin Files ( Shortcut for pull_files --path-key=plugins )
-  grunt.registerTask("pull_plugins", "Pull plugin files from a remote host with rsync.", function () {
+  // Pull Entire Plugin Folder from remote host ( Shortcut for pull_files --path-key=plugins )
+  grunt.registerTask("pull_plugins", "Pull Entire Plugin Folder from remote host with rsync.", function () {
     grunt.option('path-key', 'plugins');
     grunt.task.run("pull_files");
   });
 
-  // Push Remote Plugin Files ( Shortcut for push_files --path-key=plugins )
+  // Push Entire Plugin Folder to remote host ( Shortcut for push_files --path-key=plugins )
   grunt.registerTask("push_plugins", "Push plugin files to a remote host with rsync.", function () {
     grunt.option('path-key', 'plugins');
     grunt.task.run("push_files");
   });
 
-  // Push Local Plugin - Single Plugin folder. used for plugin developmen
+  // Push Local Plugin to remote host (Single Plugin folder). Useful for plugin development workflow
   // ( Shortcut for push_files --path-key=plugin )
   grunt.registerTask("push_plugin", "Push single plugin folder to a remote host with rsync.", function () {
     grunt.option('path-key', 'plugin');
     grunt.task.run("push_files");
   });
 
-  // Pull Remote Uplaods ( Shortcut for pull_files --path-key=uploads )
+  // Pull All Uploads from remote host ( Shortcut for pull_files --path-key=uploads )
   grunt.registerTask("pull_uploads", "Pull uploaded files from a remote host with rsync.", function () {
     grunt.option('path-key', 'uploads');
     grunt.task.run("pull_files");
   });
 
-  // Push Remote Uplaods ( Shortcut for push_files --path-key=uploads )
+  // Pull All Uploads to remote host ( Shortcut for push_files --path-key=uploads )
   grunt.registerTask("push_uploads", "Push uploaded files to a remote host with rsync.", function () {
     grunt.option('path-key', 'uploads');
     grunt.task.run("push_files");
