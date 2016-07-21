@@ -1,8 +1,8 @@
 /*
  * grunt-wordpress-deploy
- * https://github.com/webrain/grunt-wordpress-deploy
+ * https://github.com/jambox/grunt-wordpress-deploy
  *
- * Copyright (c) 2013 Webrain
+ * Copyright (c) 2016 Caliper
  * Licensed under the MIT license.
  */
 

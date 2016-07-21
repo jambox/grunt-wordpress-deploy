@@ -4,9 +4,9 @@
   "version": "0.0.5",
   "homepage": "https://github.com/jambox/grunt-wordpress-deploy",
   "author": {
-    "name": "Dario Ghilardi",
-    "email": "darioghilardi@webrain.it",
-    "url": "http://www.webrain.it"
+    "name": "Eli Silverman",
+    "email": "eli@madebycaliper.com",
+    "url": "http://www.madebycaliper.com"
   },
   "repository": {
     "type": "git",
