@@ -5,7 +5,7 @@ Deploy a Wordpress instance without pain using Grunt.
 This plugin leverages Grunt.js to push and pull a Wordpress instance into predefined locations.
 Here's are some of the features:
 
-* Multiple environments support: you can define different environments such as `development`, `staging`, `production` and so on, with different access credentials, paths and domains.
+* Multiple environments support: you can define different environments such as `development`, `staging`, `prod` and so on, with different access credentials, paths and domains.
 * Adapt the Wordpress database to the destination domain: It replaces all the instances of the source environment domain with the destination environment domain, even into serialized data.
 * Push and pull files with rsync.
 * Completely based on Javascript, requires only a few common system tools to perform the tasks (`mysql`, `mysqldump`, `ssh`).
@@ -122,29 +122,32 @@ module.exports =
       plugins : "<%= grunt.config.data.deployconfig.dev.wp_content_path %>/plugins/"
     ssh_host: "dev_user@ssh.best-client-ev.er"
 
-  production:
+  prod:
     title: "Production Site"
     database: "client_wp"
     table_prefix: "wp_"
     table_exclusions : []        
-    user: "<%= grunt.config.data.deployconfig.production.db_user %>"
-    pass: "<%= grunt.config.data.deployconfig.production.db_pass %>"
+    user: "<%= grunt.config.data.deployconfig.prod.db_user %>"
+    pass: "<%= grunt.config.data.deployconfig.prod.db_pass %>"
     host: "127.0.0.1"
     url: "//best-client-ev.er"
     sql_remove: [
       "Warning: Using a password on the command line interface can be insecure."
     ]    
     path:
-      theme   : "<%= grunt.config.data.deployconfig.production.wp_content_path %>/themes/<%= grunt.config.data.theme_name %>/"
-      uploads : "<%= grunt.config.data.deployconfig.production.wp_content_path %>/uploads/"
-      plugins : "<%= grunt.config.data.deployconfig.production.wp_content_path %>/plugins/"
+      theme   : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/themes/<%= grunt.config.data.theme_name %>/"
+      uploads : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/uploads/"
+      plugins : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/plugins/"
     ssh_host: "main_user@ssh.best-client-ev.er"
+
   your_environment {
     ...
   }
 ```
 
-In the example above we define two environments, one is mandatory and is always called `local`, but the others can be defined in any way you want. In this case we've added two more environments called `dev` and `production`.
+In the example above we define two environments, one is mandatory and is always called `local`, but the others can be defined in any way you want. In this case we've added two more environments called `dev` and `prod`.
+
+
 
 ## Available tasks
 
@@ -295,7 +298,7 @@ Type: `Object`
 
 Description: An object of pairs to specify which path in the file structure rsync should target. Used by rsync to update the correct folder on synchronization.
 
-_NOTE_: Each environment in the `Gruntfile` should have matching path keys. For example, if you specify a `theme` path for your local environment, make sure you have a `theme` path for your `dev` and `production` environments too.
+_NOTE_: Each environment in the `Gruntfile` should have matching path keys. For example, if you specify a `theme` path for your local environment, make sure you have a `theme` path for your `dev` and `prod` environments too.
 
 
 #### ssh_host
