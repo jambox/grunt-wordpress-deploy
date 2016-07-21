@@ -426,13 +426,6 @@
       }
       return path_string;
     };
-    exports.acf_import = function() {
-      var cmd;
-      cmd = 'wp acf import all';
-      return shell.exec(cmd, {
-        silent: true
-      });
-    };
     exports.check_for_mysql = function(grunt) {
       var which_mysql;
       which_mysql = shell.which('mysql');

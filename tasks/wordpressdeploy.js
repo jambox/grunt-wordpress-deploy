@@ -216,12 +216,5 @@ module.exports = function(grunt) {
     grunt.task.run("push_files");
   });
 
-  grunt.registerTask("acf_import", "Import all ACFs using acf-wp-cli.", function () {
-
-    grunt.log.subhead("Importing all ACFs");
-    util.acf_import();
-    grunt.log.ok();
-
-  });
 
 };

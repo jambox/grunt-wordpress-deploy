@@ -459,10 +459,6 @@ exports.init = (grunt) ->
     
     path_string
 
-  exports.acf_import = ->
-    cmd = 'wp acf import all'
-    shell.exec(cmd, silent: true )
-
   exports.check_for_mysql = (grunt) ->
     which_mysql = shell.which('mysql')
 
