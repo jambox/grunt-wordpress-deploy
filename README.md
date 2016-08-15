@@ -28,7 +28,7 @@ This is a [Grunt](http://gruntjs.com/) plugin, so it requires Grunt. It's really
 When Grunt is installed on your machine, you can install this plugin with the following command:
 
 ```shell
-npm install git+https://github.com/jambox/grunt-wordpress-deploy --save-dev
+npm install git+https://github.com/madebycaliper/grunt-wordpress-deploy --save-dev
 ```
 
 *@TODO : add this repo to npm instead of using github install*
