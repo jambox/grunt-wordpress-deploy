@@ -1,6 +1,6 @@
 # Grunt Wordpress Deployment
 
-Deploy a Wordpress instance without pain using Grunt.
+Deploy a Wordpress instance without pain using [Grunt](http://gruntjs.com/getting-started).
 
 This plugin leverages Grunt.js to push and pull a Wordpress instance into predefined locations.
 Here's are some of the features:
@@ -33,7 +33,7 @@ npm install git+https://github.com/madebycaliper/grunt-wordpress-deploy --save-d
 
 *@TODO : add this repo to npm instead of using github install*
 
-Once the plugin has been installed, it may be enabled and configured into your Gruntfile.coffee (or Gruntfile.js). Please follow the example Gruntfile (`grunt/wordpressdeploy.coffee`) to configure your environments.
+Once the plugin has been installed, it may be enabled and configured into your `Gruntfile.coffee` (or `Gruntfile.js`). Please follow the [example Gruntfile](https://github.com/madebycaliper/grunt-wp-deploy-boilerplate/blob/master/Gruntfile.coffee) (`grunt/wordpressdeploy.coffee`) to configure your environments.
 
 ```coffee
 
@@ -92,14 +92,15 @@ module.exports =
     table_prefix: "wp_"
     table_exclusions : [
     ]
-    user: "admin"
-    pass: "admin"
+    user: "<%= deployconfig.local.db_user %>"
+    pass: "<%= deployconfig.local.db_pass %>"
     host: "localhost"
     url: "//localhost:8888/best-client-ev.er"
     path:
-      theme   : "<%= grunt.config.data.deployconfig.local.wp_content_path %>/themes/<%= grunt.config.data.theme_name %>/build/"
-      uploads : "<%= grunt.config.data.deployconfig.local.wp_content_path %>/uploads/"
-      plugins : "<%= grunt.config.data.deployconfig.local.wp_content_path %>/plugins/"
+      theme   : "<%= deployconfig.local.wp_content_path %>/themes/<%= theme_name %>/build/"
+      uploads : "<%= deployconfig.local.wp_content_path %>/uploads/"
+      plugins : "<%= deployconfig.local.wp_content_path %>/plugins/"
+      plugin  : "<%= deployconfig.local.wp_content_path %>/plugins/<%= plugin_name %>"
 
 
   # ==========  Start Environment Definitions  ==========
@@ -112,14 +113,15 @@ module.exports =
     table_exclusions : [
       "_wf" # Will exclude with " NOT LIKE '%_wf%' " SQL statement
     ]        
-    user: "<%= grunt.config.data.deployconfig.dev.db_user %>"
-    pass: "<%= grunt.config.data.deployconfig.dev.db_pass %>"
+    user: "<%= deployconfig.dev.db_user %>"
+    pass: "<%= deployconfig.dev.db_pass %>"
     host: "127.0.0.1"
     url: "//dev.best-client-ev.er"
     path:
-      theme   : "<%= grunt.config.data.deployconfig.dev.wp_content_path %>/themes/<%= grunt.config.data.theme_name %>/"
-      uploads : "<%= grunt.config.data.deployconfig.dev.wp_content_path %>/uploads/"
-      plugins : "<%= grunt.config.data.deployconfig.dev.wp_content_path %>/plugins/"
+      theme   : "<%= deployconfig.dev.wp_content_path %>/themes/<%= theme_name %>/"
+      uploads : "<%= deployconfig.dev.wp_content_path %>/uploads/"
+      plugins : "<%= deployconfig.dev.wp_content_path %>/plugins/"
+      plugin  : "<%= deployconfig.dev.wp_content_path %>/plugins/<%= plugin_name %>"      
     ssh_host: "dev_user@ssh.best-client-ev.er"
 
   prod:
@@ -127,26 +129,30 @@ module.exports =
     database: "client_wp"
     table_prefix: "wp_"
     table_exclusions : []        
-    user: "<%= grunt.config.data.deployconfig.prod.db_user %>"
-    pass: "<%= grunt.config.data.deployconfig.prod.db_pass %>"
+    user: "<%= deployconfig.prod.db_user %>"
+    pass: "<%= deployconfig.prod.db_pass %>"
     host: "127.0.0.1"
     url: "//best-client-ev.er"
     sql_remove: [
       "Warning: Using a password on the command line interface can be insecure."
     ]    
     path:
-      theme   : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/themes/<%= grunt.config.data.theme_name %>/"
-      uploads : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/uploads/"
-      plugins : "<%= grunt.config.data.deployconfig.prod.wp_content_path %>/plugins/"
+      theme   : "<%= deployconfig.prod.wp_content_path %>/themes/<%= theme_name %>/"
+      uploads : "<%= deployconfig.prod.wp_content_path %>/uploads/"
+      plugins : "<%= deployconfig.prod.wp_content_path %>/plugins/"
+      plugin  : "<%= deployconfig.prod.wp_content_path %>/plugins/<%= plugin_name %>"      
     ssh_host: "main_user@ssh.best-client-ev.er"
 
-  your_environment {
+  your_environment:
     ...
-  }
 ```
 
 In the example above we define two environments, one is mandatory and is always called `local`, but the others can be defined in any way you want. In this case we've added two more environments called `dev` and `prod`.
 
+
+## Adding Secure/Private Connection Info
+
+The secure info has been moved out of the `wordpressdeploy.coffee` and into a `deployconfig.json` file to allow you to track the `.coffee` file in your git repo without exposing any information. Follow the Getting Started instructions on the [Grunt WP Deploy Boilerplate](https://github.com/madebycaliper/grunt-wp-deploy-boilerplate) repo for config and deployment.
 
 
 ## Available tasks
