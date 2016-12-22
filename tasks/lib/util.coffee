@@ -479,8 +479,8 @@ exports.init = (grunt) ->
 
   tpls =
     backup_path: "<%= backups_dir %>/<%= env %>/<%= date %>/<%= time %>"
-    mysqldump: "mysqldump -h <%= host %> -u<%= user %> -p'<%= pass %>' <%= database %> --port <%= port %>"
-    mysql: "mysql -h <%= host %> -u <%= user %> -p'<%= pass %>' <%= database %>"
+    mysqldump: "MYSQL_PWD=<%= pass %> mysqldump -h <%= host %> -u<%= user %> <%= database %> --port <%= port %>",
+    mysql: "MYSQL_PWD=<%= pass %> mysql -h <%= host %> -u <%= user %> <%= database %>",
     sql_connect: "mysql -h <%= host %> <%= database %> -u <%= user %> --password='<%= pass %>'"
     rsync_push: "rsync <%= rsync_args %> --delete -e 'ssh <%= ssh_host %>' <%= exclusions %> <%= from %> :<%= to %>"
     rsync_pull: "rsync <%= rsync_args %> -e 'ssh <%= ssh_host %>' <%= exclusions %> :<%= from %> <%= to %>"
