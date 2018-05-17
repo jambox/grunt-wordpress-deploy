@@ -1,7 +1,7 @@
 {
   "name": "grunt-wordpress-deploy",
   "description": "Deploy Wordpress without pain using Grunt.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "homepage": "https://github.com/madebycaliper/grunt-wordpress-deploy",
   "author": {
     "name": "Eli Silverman",

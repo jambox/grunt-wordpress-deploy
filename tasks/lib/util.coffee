@@ -268,14 +268,14 @@ exports.init = (grunt) ->
     exclusions = exclusions.trim()
     exclusions
 
-  exports.db_adapt = (local_env, target_env, src_file, dest_file) ->
+  exports.db_adapt = (target_env, local_env, src_file, dest_file) ->
 
     sqldump_output = grunt.file.read(src_file)
 
     output = sqldump_output
     
-    old_url = local_env.url
-    new_url = target_env.url
+    old_url = target_env.url
+    new_url = local_env.url
 
     grunt.log.oklns "Set the correct urls for the destination in the database..."
     console.log { old_url, new_url }
@@ -283,8 +283,8 @@ exports.init = (grunt) ->
 
     output = exports.replace_urls(old_url, new_url, output)
 
-    old_prefix = local_env.table_prefix
-    new_prefix = target_env.table_prefix
+    old_prefix = target_env.table_prefix
+    new_prefix = local_env.table_prefix
     grunt.log.oklns "New prefix:" + new_prefix + " / Old prefix:" + old_prefix
     
     if old_prefix && new_prefix
@@ -297,7 +297,7 @@ exports.init = (grunt) ->
 
     grunt.file.write dest_file, output
     
-    exports.remove_strings_from_sql(local_env, target_env, dest_file, output)
+    exports.remove_strings_from_sql(target_env, local_env, dest_file, output)
     
     exports.replace_strings_from_sql(target_env, dest_file, output)
 
