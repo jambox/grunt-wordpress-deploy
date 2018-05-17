@@ -268,14 +268,14 @@ exports.init = (grunt) ->
     exclusions = exclusions.trim()
     exclusions
 
-  exports.db_adapt = (search_options, replace_options, src_file, dest_file) ->
+  exports.db_adapt = (local_env, target_env, src_file, dest_file) ->
 
     sqldump_output = grunt.file.read(src_file)
 
     output = sqldump_output
     
-    old_url = search_options.url
-    new_url = replace_options.url
+    old_url = local_env.url
+    new_url = target_env.url
 
     grunt.log.oklns "Set the correct urls for the destination in the database..."
     console.log { old_url, new_url }
@@ -283,8 +283,8 @@ exports.init = (grunt) ->
 
     output = exports.replace_urls(old_url, new_url, output)
 
-    old_prefix = search_options.table_prefix
-    new_prefix = replace_options.table_prefix
+    old_prefix = local_env.table_prefix
+    new_prefix = target_env.table_prefix
     grunt.log.oklns "New prefix:" + new_prefix + " / Old prefix:" + old_prefix
     
     if old_prefix && new_prefix
@@ -297,7 +297,9 @@ exports.init = (grunt) ->
 
     grunt.file.write dest_file, output
     
-    exports.remove_strings_from_sql(search_options, replace_options, dest_file, output)
+    exports.remove_strings_from_sql(local_env, target_env, dest_file, output)
+    
+    exports.replace_strings_from_sql(target_env, dest_file, output)
 
     return
 
@@ -376,6 +378,42 @@ exports.init = (grunt) ->
     # Delete temp file
     grunt.file.delete file_to_run_replace_on
 
+
+  exports.replace_strings_from_sql = ( target_env, dest_file, output ) ->
+    # Write tmp file to run replacement on (solution b/c I could NOT overrite any SQL files...weird...)
+    file_to_run_replace_on = dest_file + '.tmp'
+    grunt.file.write file_to_run_replace_on, sqldump
+
+    if typeof target_env.sql_replace == "object" && target_env.sql_replace.length > 0
+      grunt.log.oklns "Replacing user-defined strings..."
+      for pair in target_env.sql_replace
+        searchString = pair[0]
+        replaceString = pair[1]
+        console.log "Replacing '#{searchString}' with '#{ replaceString }'"
+        replace(
+          regex : searchString
+          replacement : replaceString
+          paths : [file_to_run_replace_on]
+        )
+
+
+    if typeof replace_options.sql_remove == "object" && replace_options.sql_remove.length > 0
+      grunt.log.oklns "Removing strings from sql dump..."
+      for i in replace_options.sql_remove
+        console.log "'" + i + "'"
+        replace({
+          regex : i
+          replacement : ''
+          paths : [file_to_run_replace_on]
+        })
+
+    replaced_sql = grunt.file.read(file_to_run_replace_on)
+
+    # Overwrite the existing file with the new replaced string
+    grunt.file.write dest_file, replaced_sql
+
+    # Delete temp file
+    grunt.file.delete file_to_run_replace_on
 
   
   # Commands generators 

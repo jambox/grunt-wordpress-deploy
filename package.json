@@ -1,7 +1,7 @@
 {
   "name": "grunt-wordpress-deploy",
   "description": "Deploy Wordpress without pain using Grunt.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "homepage": "https://github.com/madebycaliper/grunt-wordpress-deploy",
   "author": {
     "name": "Eli Silverman",
@@ -29,21 +29,18 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "shelljs": "~0.1.4",
-    "line-reader": "~0.2.3",
-    "replace": "^0.3.0"
+    "line-reader": "^0.4.0",
+    "replace": "^1.0.0",
+    "shelljs": "^0.8.2"
   },
   "devDependencies": {
-    "grunt": "~0.4.2",
-    "grunt-contrib-clean": "~0.4.0",
-    "grunt-contrib-coffee": "~0.10.1",
-    "grunt-contrib-jshint": "~0.1.1",
-    "grunt-contrib-nodeunit": "~0.2.2",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-shell": "~0.6.0"
-  },
-  "peerDependencies": {
-    "grunt": ">=0.4.0"
+    "grunt": "^1.0.2",
+    "grunt-contrib-clean": "^1.1.0",
+    "grunt-contrib-coffee": "^2.0.0",
+    "grunt-contrib-jshint": "^1.1.0",
+    "grunt-contrib-nodeunit": "^1.0.0",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-shell": "^2.1.0"
   },
   "keywords": [
     "gruntplugin",
